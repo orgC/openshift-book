@@ -156,10 +156,8 @@ release image quay.io/openshift-release-dev/ocp-release@sha256:e9bcc5d74c4d6651f
 ###  同步镜像到本地
 
 ```
-# 打开代理
-export http_proxy="http://192.168.3.97:8001"; export HTTP_PROXY="http://192.168.3.97:8001"; export https_proxy="http://192.168.3.97:8001"; export HTTPS_PROXY="http://192.168.3.97:8001"
 
-export OCP_RELEASE=4.8.45
+export OCP_RELEASE=4.8.46
 export LOCAL_SECRET_JSON='/root/install/pull-secret.txt'
 export ARCHITECTURE='x86_64'
 export REMOVABLE_MEDIA_PATH='/root'
@@ -801,7 +799,125 @@ oc adm policy add-cluster-role-to-user cluster-admin admin
 
 # 安装operatorhub
 
+## 准备工作
+
+离线operatorhub 需要提前安装以下工具
+
+* opm
+* grpcurl
+
+```
+# download opm 
+curl -LO https://mirror.openshift.com/pub/openshift-v4/amd64/clients/ocp/4.8.46/opm-linux-4.8.46.tar.gz
+
+tar zxvf opm-linux-4.8.46.tar.gz -C /usr/local/bin
+
+# download grpcurl
+curl -LO https://github.com/fullstorydev/grpcurl/releases/download/v1.8.6/grpcurl_1.8.6_linux_x86_64.tar.gz
+
+tar zxvf grpcurl_1.8.6_linux_x86_64.tar.gz -C /usr/local/bin
+```
+
+
+
 ## 离线operatorhub
+
+
+
+### 离线所需operator 到本地
+
+```
+podman login registry.redhat.io
+
+podman run -p50051:50051 -it registry.redhat.io/redhat/redhat-operator-index:v4.8
+
+grpcurl -plaintext localhost:50051 api.Registry/ListPackages > packages.out
+
+# packages.out 会列出redhat-operator 中所有的 operator 包，挑选出来我们需要的， 如下所示
+
+{
+  "name": "cluster-logging"
+}
+{
+  "name": "elasticsearch-operator"
+}
+{
+  "name": "local-storage-operator"
+}
+{
+  "name": "ocs-operator"
+}
+
+# 执行以下命令裁剪出仅包含我们需要的operator bundle 的 镜像 
+opm index prune -f registry.redhat.io/redhat/redhat-operator-index:v4.8 \
+    -p cluster-logging,elasticsearch-operator,local-storage-operator,ocs-operator \
+    -t quay.ocp.example.com/baseimage/redhat/redhat-operator-index:v4.8
+
+# 将生成出来的镜像推送到镜像仓库中 
+podman push quay.ocp.example.com/baseimage/redhat/redhat-operator-index:v4.8
+
+# 此时可以再次确认下我们的镜像， 执行以下两行命令，可以看到此时的 packages.out 文件里只有我们挑选出来的镜像
+podman run -p50051:50051 -it quay.ocp.example.com/baseimage/redhat/redhat-operator-index:v4.8
+grpcurl -plaintext localhost:50051 api.Registry/ListPackages > packages.out
+
+# 同步镜像到本地
+# 说明，此时pull-secret.json 大致内容如下所示
+#####
+{
+  "auths": {
+    "cloud.openshift.com": {
+      "auth": "=",
+      "email": ""
+    },
+    "quay.io": {
+      "auth": "=",
+      "email": ""
+    },
+    "registry.connect.redhat.com": {
+      "auth": "==",
+      "email": ""
+    },
+    "registry.redhat.io": {
+      "auth": "==",
+      "email": ""
+    },
+    "quay.ocp.example.com": {
+      "auth": "",
+      "email": ""
+    }
+  }
+}
+################
+
+# 这个需要等待一段时间才会开始下载，稍等片刻 
+REG_CREDS=/root/install/pull-secret.json
+
+oc adm catalog mirror \
+    quay.ocp.example.com/baseimage/redhat/redhat-operator-index:v4.8 \
+    file:///local/index \
+    -a ${REG_CREDS} \
+    --index-filter-by-os='linux/amd64' 
+    
+```
+
+![image-20220725234400369](./install-ocp4.8.assets/image-20220725234400369.png)
+
+
+
+### 推送到镜像仓库
+
+在包含 v2 目录的父目录里执行以下命令，将operator 镜像推送到registry 中 
+
+```
+
+REG_CREDS=/root/install/pull-secret.json
+
+oc adm catalog mirror \
+    file://local/index/baseimage/redhat/redhat-operator-index:v4.8 \
+    quay.ocp.example.com/baseimage/redhat/redhat-operator-index:v4.8 \
+    -a ${REG_CREDS} \
+    --index-filter-by-os='linux/amd64'
+```
 
 
 
@@ -817,32 +933,7 @@ oc adm policy add-cluster-role-to-user cluster-admin admin
 
 # 离线 operator hub
 
-
-
-export REG_CREDS=/root/install/pull-secret.txt
-
-oc adm catalog mirror \
-    registry.redhat.io/redhat/redhat-operator-index:v4.9 \ 
-    registry.ocp49.ipi.com:5000/olm-mirror \ 
-    -a ${REG_CREDS} \ 
-    --index-filter-by-os='linux/amd64' \ 
-    --manifests-only 
-
-oc adm catalog mirror \
-    registry.redhat.io/redhat/redhat-operator-index:v4.9 \
-    registry.ocp49.ipi.com:5000/olm-mirror \
-    -a ${REG_CREDS} \
-    --index-filter-by-os='linux/amd64' \
-    --manifests-only 
-
-oc adm catalog mirror \
-    registry.redhat.io/redhat/redhat-operator-index:v4.9 \
-    file:///data/mirror\
-    -a ${REG_CREDS} \
-    --index-filter-by-os='linux/amd64' \
-    --manifests-only 
-
-file:///local/index
+关于这个，可以参考  [离线安装operator hub](./离线operatorhub.md)
 
 
 
@@ -850,4 +941,7 @@ file:///local/index
 
 
 
-```
+# reference
+
+https://docs.openshift.com/container-platform/4.8/operators/admin/olm-managing-custom-catalogs.html#olm-managing-custom-catalogs
+
