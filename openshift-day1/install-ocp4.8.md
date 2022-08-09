@@ -660,6 +660,7 @@ for name in \
   infra3-48 
 do
   govc vm.change -vm /Datacenter/vm/OCP4.8/$name.ocp48.example.com -c=8 -m=16384
+  govc vm.disk.change -vm /Datacenter/vm/OCP4.8/$name.ocp48.example.com -disk.key 2000 -size 100G
 done
 
 # 
@@ -711,12 +712,26 @@ oc get csr -o go-template='{{range .items}}{{if not .status}}{{.metadata.name}}{
 
 
 
+## 检查master 节点磁盘性能
+
+这一步非常重要，OCP4 对master 节点的磁盘性能要求很高，如果IO不好的话，很容易导致ETCD故障，然后进一步导致集群不稳定，OCP4 的要求小于10ms 
+
+```
+oc debug node/<master-node>
+chroot /host bash
+podman run --volume /var/lib/etcd:/var/lib/etcd:Z quay.io/openshift-scale/etcd-perf
+
+```
+
+
+
+
+
 ## 安装后基本配置
 
 ```
 # 自动补全
 yum install httpd-tools bash-completion -y 
-
 ```
 
 
@@ -764,6 +779,8 @@ oc adm taint nodes -l node-role.kubernetes.io/infra node-role.kubernetes.io/infr
 # 为节点添加内容
 oc patch ingresscontroller/default -n  openshift-ingress-operator  --type=merge -p '{"spec":{"nodePlacement": {"nodeSelector": {"matchLabels": {"node-role.kubernetes.io/infra": ""}},"tolerations": [{"effect":"NoSchedule","key": "node-role.kubernetes.io/infra","value": "reserved"},{"effect":"NoExecute","key": "node-role.kubernetes.io/infra","value": "reserved"}]}}}'
 
+# 设置 router 节点的数量 
+c patch -n openshift-ingress-operator ingresscontroller/default --patch '{"spec":{"replicas": 3}}' --type=merge
 ```
 
 

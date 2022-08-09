@@ -5,8 +5,6 @@
 
 
 
-
-
 # 离线ocp4.10 operator
 
 ## 下载所需要的工具
@@ -288,7 +286,6 @@ mirror:
 ```
 
 oc mirror --config imageset-local.yaml file://local-operators
-
 ```
 
 
@@ -297,7 +294,106 @@ oc mirror --config imageset-local.yaml file://local-operators
 
 ## 同步operator到本地镜像仓库
 
+说明：建议把所有的镜像都推送到同一个 repo 中，这样比较容易通过 mirror 来映射所有的镜像
 
+```
+export LOCAL_REGISTRY='registry2.ocp.example.com:8443'
+export LOCAL_REPOSITORY='baseimage/ocp4'
+export LOCAL_SECRET_JSON='/root/install/init-auth.json'
+
+oc mirror --from mirror_seq1_000000.tar docker://registry2.ocp.example.com:8443/baseimage/ocp4
+```
+
+
+
+# 创建registry mirror
+
+
+
+创建 mirror-by-tag-registries.conf 文件 
+
+```
+cat << EOF > mirror-by-tag-registries.conf
+[[registry]]
+  prefix = ""
+  location = "registry.access.redhat.com"
+  mirror-by-digest-only = false
+
+  [[registry.mirror]]
+    location = "registry2.ocp.example.com:8443/baseimage/ocp4"
+
+[[registry]]
+  prefix = ""
+  location = "registry.redhat.io"
+  mirror-by-digest-only = false
+
+  [[registry.mirror]]
+    location = "registry2.ocp.example.com:8443/baseimage/ocp4"
+
+[[registry]]
+  prefix = ""
+  location = "registry.connect.redhat.com"
+  mirror-by-digest-only = false
+
+  [[registry.mirror]]
+    location = "registry2.ocp.example.com:8443/baseimage/ocp4"
+EOF
+```
+
+
+
+ 生成machineconfig 文件， 分别基于worker和master 两个mcp。如果有其他的mcp，则需要创建对应的mcp 
+
+```
+REGISTRIES=`base64 -w0 mirror-by-tag-registries.conf`
+
+cat <<EOF > mirror-by-tag-registries.yaml
+apiVersion: machineconfiguration.openshift.io/v1
+kind: MachineConfig
+metadata:
+  labels:
+    machineconfiguration.openshift.io/role: worker
+  name: 98-worker-mirror-by-tag-registries
+spec:
+  config:
+    ignition:
+      version: 3.1.0
+    storage:
+      files:
+      - contents:
+          source: data:text/plain;charset=utf-8;base64,${REGISTRIES}
+        filesystem: root
+        mode: 420
+        path: /etc/containers/registries.conf.d/098-worker-mirror-by-tag-registries.conf
+---
+
+apiVersion: machineconfiguration.openshift.io/v1
+kind: MachineConfig
+metadata:
+  labels:
+    machineconfiguration.openshift.io/role: master
+  name: 98-master-mirror-by-tag-registries
+spec:
+  config:
+    ignition:
+      version: 3.1.0
+    storage:
+      files:
+      - contents:
+          source: data:text/plain;charset=utf-8;base64,${REGISTRIES}
+        filesystem: root
+        mode: 420
+        path: /etc/containers/registries.conf.d/098-master-mirror-by-tag-registries.conf
+EOF
+```
+
+
+
+生成对应的mc 配置 
+
+```
+oc apply -f mirror-by-tag-registries.yaml
+```
 
 
 

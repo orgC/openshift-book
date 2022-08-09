@@ -89,7 +89,7 @@ Flags:
 
 # 最简安装
 
-## 直接安装
+## 安装
 
 最简单的安装方式
 
@@ -99,7 +99,19 @@ Flags:
 
 
 
-## 安装后计划
+指定参数
+
+注意： 默认情况下 端口为8443，可以通过设定 `--quayHostname` 来指定端口 
+
+```
+./mirror-registry install --quayHostname registry3.ocp.example.com:443 --sslCert /opt/certs/registry3.ocp.example.com.crt --sslKey /opt/certs/registry3.ocp.example.com.key --initPassword "R3dh4t1!"
+```
+
+
+
+## 安装后
+
+### 配置mirror
 
 
 
