@@ -725,8 +725,6 @@ podman run --volume /var/lib/etcd:/var/lib/etcd:Z quay.io/openshift-scale/etcd-p
 
 
 
-
-
 ## 安装后基本配置
 
 ```
@@ -790,6 +788,8 @@ c patch -n openshift-ingress-operator ingresscontroller/default --patch '{"spec"
 ## 添加用户
 
 ```
+yum install -y httpd-tools
+
 htpasswd -bc localuser.user admin admin
 oc adm policy add-cluster-role-to-user cluster-admin admin
 ```

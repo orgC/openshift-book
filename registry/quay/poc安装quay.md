@@ -1,6 +1,7 @@
 # 目标
 
-基于POC的需求，快速安装quay
+* 基于POC的需求，快速安装quay
+* 开启 Quay mirror 功能
 
 
 
@@ -131,10 +132,10 @@ podman run --rm -it --name quay_config -p 80:8080 -p 443:8443 registry.redhat.io
 
 
 - **数据库类型：** Postgres
-- **数据库服务器：** registry5.ocp.example.com:5432
-- **Username:** quayuser
-- **Password:** quaypass
-- **数据库名称：** quay
+- **数据库服务器：**  `registry5.ocp.example.com:5432`
+- **Username:**  `quayuser`
+- **Password:**  `quaypass`
+- **数据库名称：** `quay`
 
 ![image-20220809230635527](./poc安装quay.assets/image-20220809230635527.png)
 
@@ -161,14 +162,15 @@ podman run --rm -it --name quay_config -p 80:8080 -p 443:8443 registry.redhat.io
 下载配置文件，并停止 quay 容器 
 
 ```
-podman rm -f <quay>
+
+podman stop quay_config
 ```
 
 
 
 
 
-## 配置
+## 启动quay服务
 
 
 
@@ -205,9 +207,10 @@ setfacl -m u:1001:-wx $QUAY/storage
 
 ```
 
+  
 sudo podman run -d --rm --name mirroring-worker \
   -v $QUAY/config:/conf/stack:Z \
-  -v /data/certs/myrootCA.crt:/etc/pki/ca-trust/source/anchors/ca.crt \
+  -v $QUAY/config/extra_ca_certs/myrootCA.crt:/etc/pki/ca-trust/source/anchors/ca.crt \
   registry.redhat.io/quay/quay-rhel8:v3.7.3 repomirror
 ```
 
