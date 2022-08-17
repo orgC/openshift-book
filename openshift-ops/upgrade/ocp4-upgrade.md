@@ -39,6 +39,14 @@ oc image mirror -a ${LOCAL_SECRET_JSON} \
 
 
 
+## 同步离线operator
+
+
+
+```
+需要
+```
+
 
 
 
@@ -50,6 +58,8 @@ oc image mirror -a ${LOCAL_SECRET_JSON} \
 
 
 ## 获取升级信息
+
+
 
 
 
