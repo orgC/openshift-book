@@ -220,7 +220,7 @@ spec:
 
 
 
-绑核的结果可以从 `/var/lib/kubelet/cpu_manager_state` 文件查看， 从下面结果可以看到Cpu1 被分配给pod，因此
+绑核的结果可以从 `/var/lib/kubelet/cpu_manager_state` 文件查看， 从下面结果可以看到Cpu1 被分配给pod
 
 
 ```
@@ -246,8 +246,6 @@ spec:
 
 
 ## Request CPU数等于进程数
-
-
 
 
 
@@ -595,10 +593,8 @@ spec:
 
 通过上述实验，可以得出以下结论
 
-1. 绑核时，request cpu 和limit cpu 需要相等，并且是整数，不能写成 `1000m` 这种模式。否则的话不会触发绑核
-2. 绑核后
-
-
+1. 必须是 `Guaranteed`  pod 才有可能绑核， 其他QoS的pod无法绑核
+2. 绑核的话，CPU 必须是整数，且Request CPU 和Limit CPU 相等， 否则不会绑核
 
 
 
