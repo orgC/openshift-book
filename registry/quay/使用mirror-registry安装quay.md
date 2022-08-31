@@ -101,10 +101,10 @@ Flags:
 
 指定参数
 
-注意： 默认情况下 端口为8443，可以通过设定 `--quayHostname` 来指定端口 
+注意： 默认情况下 端口为8443，可以通过设定 `--quayHostname` 来指定端口。
 
 ```
-./mirror-registry install --quayHostname registry3.ocp.example.com:443 --sslCert /opt/certs/registry3.ocp.example.com.crt --sslKey /opt/certs/registry3.ocp.example.com.key --initPassword "R3dh4t1!"
+./mirror-registry install --quayHostname registry3.ocp.example.com:443 --sslCert /opt/certs/registry3.ocp.example.com.crt --sslKey /opt/certs/registry3.ocp.example.com.key --initPassword "R3dh4t1!" --quayRoot /data/quay-install
 ```
 
 

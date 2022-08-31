@@ -401,3 +401,73 @@ oc apply -f mirror-by-tag-registries.yaml
 
 # 配置operaothub
 
+
+
+## 禁用所有的默认index
+
+```
+oc patch OperatorHub cluster --type json \
+    -p '[{"op": "add", "path": "/spec/disableAllDefaultSources", "value": true}]'
+    
+```
+
+
+
+## 使用当前的operatorhub index
+
+使用
+
+
+
+## enable or disable 默认的index
+
+
+
+```
+
+oc edit operatorhubs/cluster
+
+...
+spec:
+  disableAllDefaultSources: true
+  sources:
+  - disabled: true
+    name: community-operators
+  - disabled: true
+    name: certified-operators
+  - disabled: false    # 手工修改这里，可以enable默认的index 
+    name: redhat-operators
+  - disabled: false
+    name: redhat-marketplace
+
+```
+
+
+
+## 配置proxy
+
+在ocp4.10 的版本里边，离线环境operator 需要添加proxy ，否则会出现部分镜像is无法拉取的问题
+
+
+
+```
+oc edit proxy cluster
+
+
+############## 
+
+apiVersion: config.openshift.io/v1
+kind: Proxy
+metadata:
+  creationTimestamp: "2022-08-18T05:40:37Z"
+  generation: 1
+  name: cluster
+  resourceVersion: "607"
+  uid: 2c53a99f-541f-4ed7-a369-48f75e815c42
+spec:
+  trustedCA:
+    name: "user-ca-bundle"    # 添加 user-ca-bundle
+status: {}
+
+```
+

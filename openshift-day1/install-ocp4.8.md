@@ -522,8 +522,6 @@ additionalTrustBundle: |
   /6c8b8XO6Iz6qg83T0BKX/A+fvohK0o7egviJBtFthViqIXfiXuFkXGf08LVcCue
   deRsr+cT9atRTZk1zrqFeWW0NoeeMQGzAqLI8Cl3Tm4Rdd9mkz1cKB2Wx6wuhLfT
   A6tQtGg2OjtzEHllFDX0ZUuqMOYiChXV4Cf24ILkaNFRQDT9b89ZvZrudfywzXa0
-  NKkupP5tvRwI4FDyJHexo1oByLWQELg9Bzyu5D7bmvx3OrsUAvbIjsoCX/pIARSV
-  TA1bEqp5lGAVlQ73asXm1SpLRuf/ngrhaTJVBhb+nuP1nw6b7CAC7/ryHUpylePm
   1WKsqMPcRjVRqJbzu49xnDtYlyR5iXAJFOVPyBfXebgFdenm72kvTtQ4b6XZKC1g
   X966unXHGDJ6toIFUqd8C6DK83rfFU++wJx8iF3rohaVcsfs7MvLXKGNXWpZa4cV
   1NG8eNXFThrQW02p6DUpNUg+mfOn+DkJLyHeycQ+HJmHmdWX67f+Z2QQzXj2jWfL
@@ -772,13 +770,13 @@ oc label node infra3-48.ocp48.example.com node-role.kubernetes.io/infra=
 
 ```
 # 为infra 节点打上污点
-oc adm taint nodes -l node-role.kubernetes.io/infra node-role.kubernetes.io/infra=reserved:NoSchedule node-role.kubernetes.io/infra=reserved:NoExecute
+oc adm taint nodes -l node-role.kubernetes.io/infra node-role.kubernetes.io/infra:NoSchedule
 
-# 为节点添加内容
-oc patch ingresscontroller/default -n  openshift-ingress-operator  --type=merge -p '{"spec":{"nodePlacement": {"nodeSelector": {"matchLabels": {"node-role.kubernetes.io/infra": ""}},"tolerations": [{"effect":"NoSchedule","key": "node-role.kubernetes.io/infra","value": "reserved"},{"effect":"NoExecute","key": "node-role.kubernetes.io/infra","value": "reserved"}]}}}'
+# 配置router pod 部署在infra节点上，并容忍相关的污点 
+oc patch ingresscontroller/default -n  openshift-ingress-operator  --type=merge -p '{"spec":{"nodePlacement": {"nodeSelector": {"matchLabels": {"node-role.kubernetes.io/infra": ""}},"tolerations": [{"effect":"NoSchedule","key": "node-role.kubernetes.io/infra"}]}}}'
 
 # 设置 router 节点的数量 
-c patch -n openshift-ingress-operator ingresscontroller/default --patch '{"spec":{"replicas": 3}}' --type=merge
+oc patch -n openshift-ingress-operator ingresscontroller/default --patch '{"spec":{"replicas": 3}}' --type=merge
 ```
 
 
@@ -941,6 +939,73 @@ oc adm catalog mirror \
 
 
 ## 安装logging
+
+
+
+### 创建 logging instance 
+
+
+
+```
+
+apiVersion: "logging.openshift.io/v1"
+kind: "ClusterLogging"
+metadata:
+  name: "instance" 
+  namespace: "openshift-logging"
+spec:
+  managementState: "Managed"  
+  logStore:
+    type: "elasticsearch"  
+    retentionPolicy: 
+      application:
+        maxAge: 7d
+      infra:
+        maxAge: 7d
+      audit:
+        maxAge: 7d
+    elasticsearch:
+      nodeCount: 3 
+      nodeSelector: 
+        node-role.kubernetes.io/infra: ''
+      storage:
+        storageClassName: "logging-sc" 
+        size: 200G
+      tolerations: 
+      - key: "node-role.kubernetes.io/infra"
+        operator: "Exists"
+        effect: "NoSchedule"
+      resources: 
+        limits:
+          memory: "16Gi"
+        requests:
+          memory: "16Gi"
+      proxy: 
+        resources:
+          limits:
+            memory: 256Mi
+          requests:
+             memory: 256Mi
+      redundancyPolicy: "SingleRedundancy"
+  visualization:
+    type: "kibana"  
+    kibana:
+      nodeSelector: 
+        node-role.kubernetes.io/infra: ''
+      tolerations: 
+      - key: "node-role.kubernetes.io/infra"
+        operator: "Exists"
+        effect: "NoSchedule"
+      replicas: 1
+  collection:
+    logs:
+      type: "fluentd"  
+      fluentd: 
+        tolerations: 
+        - key: "node-role.kubernetes.io/infra"
+          operator: "Exists"
+          effect: "NoSchedule"
+```
 
 
 
