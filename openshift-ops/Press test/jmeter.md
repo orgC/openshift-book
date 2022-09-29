@@ -67,7 +67,7 @@ oc create deployment nginx --image quay.io/junkai/nginx:pressure
 
 oc expose deploy nginx --port=8081   # 注意这里的端口号
 
-oc expose svc/nginx
+oc expose svc/nginxds
 
 oc scale --replicas=10 deployment nginx  # 扩容pod数量
 ```
@@ -404,11 +404,11 @@ Charts 页面，用图表的形式展示测试数据，让测试报告更加直�
 
 #### Latency Vs Request
 
+完成一个完整的请求所需平均时间与每秒请求数的关系图
 
 
 
-
-### Response Times
+![image-20220914151521986](./jmeter.assets/image-20220914151521986.png)
 
 
 
