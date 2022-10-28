@@ -27,6 +27,26 @@ setenforce 0
 
 
 
+### jmeter 控制节点配置
+
+jmeter 本身是master-agent 模式，可以通过master控制多个agent产生压力
+
+jmeter.properties 文件中有两处需要修改
+
+```
+# Set this if you don't want to use SSL for RMI
+# 这里设置为true 
+server.rmi.ssl.disable=true    
+
+...
+
+# Remote Hosts - comma delimited
+# 这里添加remote节点
+remote_hosts=192.168.3.86:1099,192.168.3.87:1099
+```
+
+
+
 ### 开启jmeter server
 
 在以下测试例子中，我们准备了 jmeter1, jmeter2, jmeter3 三个jmeter节点，其中jmeter1 作为master， 另外两个作为slave，因此需要在slave 节点上开启 jmeter-server
