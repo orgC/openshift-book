@@ -8,8 +8,6 @@
   * 课后作业
     * 使用docker-compose 部署一个 wordpress + mysql 的服务 
 
-  
-
 * 第二天：安装kubernetes 环境
 
   * 安装1.22 版本 k8s 
@@ -18,8 +16,6 @@
   * 介绍并练习一些常见的k8s对象 
   * 课后作业
     * 基于cri-o 安装 k8s 1.24 
-
-  
 
 * 第三天： 介绍k8s相关概念，练习相关试验 
 
@@ -32,8 +28,6 @@
   * 课后作业
 
     * 安装一个nginx之外的controller
-
-    
 
 * 第四天： 介绍helm 和 operator 
 

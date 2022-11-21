@@ -457,6 +457,10 @@ https://keycloak-rhsso.apps.infra-cluster.example.com/auth/admin/master/console/
 
 
 
+进入 zync-client，选择service account roles， 如下图所示，选择realm-management->manange-client,  将其加入 Assigned Roles 中。否则后面  在3scale 创建应用的时候，无法自动的在RHSSO上创建client
+
+![image-20221115191712626](./API with SSO.assets/image-20221115191712626.png)
+
 
 
 ## 配置 product
@@ -469,7 +473,7 @@ https://keycloak-rhsso.apps.infra-cluster.example.com/auth/admin/master/console/
    2. **Client-secret**:  从 sso  zync-client  secret 获取 
    3. **RHSSO URL**: `keycloak-rhsso.apps.infra-cluster.example.com/auth/realms/demo`
 
-
+> https://<CLIENT_ID>:<CLIENT_SECRET>@<HOST>:<PORT>/auth/realms/<REALM_NAME>
 
 ![image-20221107142459513](./API with SSO.assets/image-20221107142459513.png)
 
@@ -562,47 +566,6 @@ oc -n secure-oauth delete pod \
 
 
 
-
-
-
-
-
-
-
-```
-Starting lab.
-
- · Logging in OCP cluster .............................................................................................................................................. SUCCESS
- · Cluster Ready ....................................................................................................................................................... SUCCESS
- · Checking 3scale installation on OpenShift. 3scale will be installed if not found .................................................................................... SUCCESS
-    - Project 3scale already exists, skipping creation
-    - OperatorGroup 3scale-group already exists, skipping creation
-    - Subscription 3scale-subscription already exists, skipping creation
-    - api-manager apimanager-sample already exists, skipping creation
- · Waiting for 3scale APIMAnager to be ready, this could take a while .................................................................................................. SUCCESS
-    - 3scale APIManager is ready
- · Logging into 3scale ................................................................................................................................................. SUCCESS
- · Check 3scale Ready .................................................................................................................................................. SUCCESS
- · Checking that 3scale container has the 3scale-tenant remote ......................................................................................................... SUCCESS
- · Copy exercise files ................................................................................................................................................. SUCCESS
- · Creating lab project rhsso .......................................................................................................................................... SUCCESS
- · Applying YAML files ................................................................................................................................................. SUCCESS
- · Waiting for rhsso-operator to be ready .............................................................................................................................. /
--
-SUCCESS
- · Applying YAML files ................................................................................................................................................. SUCCESS
- · Creating lab project secure-oauth ................................................................................................................................... SUCCESS
- · Applying OCP lab resources .......................................................................................................................................... SUCCESS
- · Creating product 'secure_oauth' with assigned backend 'books_api_v2' and application plan 'secure_oauth_basic' ...................................................... SUCCESS
-    - Product 'secure_oauth' created
-    - Backend 'books_api_v2' created
-    - Backend books_api_v2 mapped to product secure_oauth under path '/books'
- · Creating application 'secure_oauth_app' for product 'secure_oauth' .................................................................................................. SUCCESS
-    - Application 'secure_oauth_app' created
- · Promoting 'secure_oauth' to production .............................................................................................................................. SUCCESS
-    - Product secure_oauth version 1 is now in Production environment
-
-```
 
 
 

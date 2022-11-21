@@ -45,11 +45,7 @@ oc create secret generic apicast-secret \
 
 
 
-
-
 创建 apicast 实例
-
-
 
 ```
 apiVersion: apps.3scale.net/v1alpha1
@@ -70,5 +66,29 @@ spec:
   timezone: Asia/Shanghai
   replicas: 2
 
+```
+
+
+
+# 部署测试环境 APIcast
+
+
+
+## 创建apicast token
+
+```
+0c1bee804acb97450b4eb7afcf12f70d12de2acfe377c8950a8048c2350a0d09
+```
+
+
+
+
+
+
+
+# 部署生产APICast 
+
+```
+oc new-project product-apicast
 ```
 
