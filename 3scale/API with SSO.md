@@ -269,10 +269,6 @@ oc -n rhsso get secret \
 
 
 
-
-
-
-
 # DEMO
 
 
@@ -474,6 +470,8 @@ https://keycloak-rhsso.apps.infra-cluster.example.com/auth/admin/master/console/
    3. **RHSSO URL**: `keycloak-rhsso.apps.infra-cluster.example.com/auth/realms/demo`
 
 > https://<CLIENT_ID>:<CLIENT_SECRET>@<HOST>:<PORT>/auth/realms/<REALM_NAME>
+>
+> https://zync-client:zLsvhO1plK4g1jks5lY8lPW87BlLGEGU@keycloak-rhsso.apps.infra-cluster.example.com/auth/realms/demo
 
 ![image-20221107142459513](./API with SSO.assets/image-20221107142459513.png)
 
@@ -516,7 +514,7 @@ data:
   REACT_APP_BASE_URL: secure-oauth-3scale-apicast-staging.apps.infra-cluster.example.com
   REACT_APP_CLIENT_ID: 28864d12
   REACT_APP_ENDPOINT: /books
-  REACT_APP_KEYCLOAK_REALM: do240
+  REACT_APP_KEYCLOAK_REALM: demo
   REACT_APP_KEYCLOAK_URL: https://keycloak-rhsso.apps.infra-cluster.example.com/auth
 kind: ConfigMap
 metadata:
@@ -555,19 +553,26 @@ oc -n secure-oauth delete pod \
 
 
 
+## 访问页面
+
+此时直接访问 demo2 中route 的地址 `http://books-frontend-demo2.apps.infra-cluster.example.com/`
+
+发现会有以下报错
+
+![image-20221121160034903](./API with SSO.assets/image-20221121160034903.png)
 
 
 
+解决方案：
+
+复制红框中的地址，在另一个窗口打开。
+
+![image-20221121160153720](./API with SSO.assets/image-20221121160153720.png)
+
+切回原来的界面，然后刷新窗口即可
+
+![image-20221121160239816](./API with SSO.assets/image-20221121160239816.png)
 
 
 
-
-
-
-
-
-
-
-
-
-
+至此，demo 完成

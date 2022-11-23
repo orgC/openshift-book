@@ -59,9 +59,11 @@ spec:
   deploymentEnvironment: staging
   exposedHost:
     host: custom-apicast.apps.infra-cluster.example.com
+    tls:
+    - {}
   resources:
     limits:
-      cpu: '2'
+      cpu: '0'
       memory: 128Mi
   timezone: Asia/Shanghai
   replicas: 2
@@ -69,6 +71,12 @@ spec:
 ```
 
 
+
+更新DEPLOYMENT 类型为APIcast self-managed
+
+> 使用了 self-managed 之后，不能再继续使用之前的地址，所以需要同时为 staging 和 production 配置apicast 
+
+![image-20221121111051232](./APICast.assets/image-20221121111051232.png)
 
 # 部署测试环境 APIcast
 
@@ -84,11 +92,43 @@ spec:
 
 
 
+# 部署生产 APICast
 
+## 创建 production apicast token
 
-# 部署生产APICast 
+按照上边的做法在3scale里创建token
+
+创建 secret
 
 ```
-oc new-project product-apicast
+oc create secret generic product-apicast-secret \
+--from-literal=AdminPortalURL=https://d124a3410d03be2572a231917ce771366563e3cb8697de5dbe6635c6ba6dc094@3scale-admin.apps.infra-cluster.example.com
+
+```
+
+
+
+创建实例
+
+```
+apiVersion: apps.3scale.net/v1alpha1
+kind: APIcast
+metadata:
+  name: product-apicast
+  namespace: apicast
+spec:
+  adminPortalCredentialsRef:
+    name: product-apicast-secret
+  deploymentEnvironment: production
+  exposedHost:
+    host: production-custom-apicast.apps.infra-cluster.example.com
+    tls:
+    - {}
+  resources:
+    limits:
+      cpu: '0'
+      memory: 128Mi
+  timezone: Asia/Shanghai
+  replicas: 2
 ```
 

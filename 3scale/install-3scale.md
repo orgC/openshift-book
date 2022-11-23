@@ -95,7 +95,35 @@ oc get secret system-seed -n 3scale \
 
 
 
-## 部署DEMO
+组件默认配置
+
+
+
+| system-sidekiq     | 100m  | 1000m    | 500Mi  | 2Gi   |
+| ------------------ | ----- | -------- | ------ | ----- |
+| system-sphinx      | 80m   | 1000m    | 250Mi  | 512Mi |
+| system-redis       | 150m  | 500m     | 256Mi  | 32Gi  |
+| system-mysql       | 250m  | No limit | 512Mi  | 2Gi   |
+| system-postgresql  | 250m  | No limit | 512Mi  | 2Gi   |
+| backend-listener   | 500m  | 1000m    | 550Mi  | 700Mi |
+| backend-worker     | 150m  | 1000m    | 50Mi   | 300Mi |
+| backend-cron       | 50m   | 150m     | 40Mi   | 80Mi  |
+| backend-redis      | 1000m | 2000m    | 1024Mi | 32Gi  |
+| apicast-production | 500m  | 1000m    | 64Mi   | 128Mi |
+| apicast-staging    | 50m   | 100m     | 64Mi   | 128Mi |
+| zync               | 150m  | 1        | 250M   | 512Mi |
+| zync-que           | 250m  | 1        | 250M   | 512Mi |
+| zync-database      | 50m   | 250m     | 250M   | 2G    |
+
+
+
+## 创建 redis secret
+
+
+
+
+
+##  创建实例
 
 ```
 apiVersion: apps.3scale.net/v1alpha1
@@ -129,11 +157,21 @@ spec:
     stagingSpec:
       replicas: 2
   wildcardDomain: apps.infra-cluster.example.com
+  externalComponents:
+    backend:
+      redis: true
+    system:
+      database: false
+      redis: true
+    zync:
+      database: false
 ```
 
 
 
 
+
+域名：生产环境api-cast 域名 
 
 
 
