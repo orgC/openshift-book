@@ -4,7 +4,7 @@
 
 ## 测试环境架构
 
-![ftc 架构-OCP4压测.drawio](./jmeter.assets/ftc 架构-OCP4压测.drawio-1844267.png)
+![ftc 架构-OCP4压测.drawio](./jmeter.assets/test.drawio-1844267.png)
 
 ##  准备jmeter
 
@@ -87,7 +87,7 @@ oc create deployment nginx --image quay.io/junkai/nginx:pressure
 
 oc expose deploy nginx --port=8081   # 注意这里的端口号
 
-oc expose svc/nginxds
+oc expose svc/nginx
 
 oc scale --replicas=10 deployment nginx  # 扩容pod数量
 ```
@@ -130,8 +130,6 @@ global
     cpu-map auto:1/1-4 0-3   # 绑核， 4个线程绑定前4个核
 ... 
 ```
-
-
 
 
 
@@ -277,6 +275,23 @@ global
 -e：设置测试完成后生成测试报表。
 -o：指定测试报表生成文件夹。文件夹必须为空或不存在。
 ```
+
+
+
+## 生成测试报告
+
+
+
+```
+./bin/jmeter -g jmeter.jtl -o demo2-1router-8c-300-3node
+
+-o: 指定的目录，必须是空目录
+
+```
+
+
+
+
 
 
 

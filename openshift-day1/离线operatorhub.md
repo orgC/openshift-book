@@ -87,6 +87,26 @@ oc mirror list operators --catalog=registry2.ocp.example.com:8443/baseimage/redh
 
 
 
+
+
+## 下载operator index 到本地
+
+
+
+```
+
+# 或者可以下载到本地
+ oc image mirror registry.redhat.io/redhat/redhat-operator-index:v4.11 file://redhat-operator-index
+
+
+#  推送到 本地镜像仓库
+oc image  mirror --from-dir=./redhat-index/ file://redhat-operator-index:v4.11 quay.ocp.example.com/redhat/redhat-index:v4.11
+```
+
+
+
+
+
 ## 查看所有的operator 列表
 
 
