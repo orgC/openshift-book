@@ -1,3 +1,9 @@
+[TOC]
+
+
+
+
+
 # 目标
 
 1. 安装OCP4.8.45
@@ -1018,6 +1024,229 @@ spec:
 关于这个，可以参考  [离线安装operator hub](./离线operatorhub.md)
 
 
+
+
+
+# 配置NFS provider
+
+## nfs 配置
+
+在NFS server 上配置, 使用centos7
+
+```
+
+yum -y install nfs-utils
+
+mkdir -p /data/nfs
+chown -R nobody:nobody /data/nfs
+
+sed -i '/LOCKD_TCPPORT/s/^#//' /etc/sysconfig/nfs
+sed -i '/LOCKD_UDPPORT/s/^#//' /etc/sysconfig/nfs
+sed -i '/STATD_PORT/s/^#//' /etc/sysconfig/nfs
+
+cat /etc/sysconfig/nfs |grep 'STATD_PORT\|LOCKD_TCPPORT\|LOCKD_UDPPORT'
+
+# 期望的输出
+LOCKD_TCPPORT=32803
+LOCKD_UDPPORT=32769
+STATD_PORT=662
+
+# 配置nfs目录
+vim /etc/exports
+
+/data/nfs *(rw,sync,no_root_squash)
+
+# 配置自启动
+systemctl enable nfs-server
+systemctl restart nfs-server
+
+# 开防火墙端口
+firewall-cmd --add-port=2049/tcp --permanent
+firewall-cmd --add-port=2049/udp --permanent
+firewall-cmd --add-port=111/tcp --permanent
+firewall-cmd --add-port=111/udp --permanent
+firewall-cmd --add-port=20048/tcp --permanent
+firewall-cmd --add-port=20048/udp --permanent
+firewall-cmd --add-port=32803/tcp --permanent
+firewall-cmd --add-port=32803/udp --permanent
+firewall-cmd --add-port=32769/tcp --permanent
+firewall-cmd --add-port=32769/udp --permanent
+firewall-cmd --add-port=662/tcp --permanent
+firewall-cmd --add-port=662/udp --permanent
+firewall-cmd --reload
+
+
+立即生效
+exportfs -av
+```
+
+
+
+## OCP storageclass 配置
+
+### 创建 project 
+
+```
+oc new-project nfs-provisioner
+```
+
+
+
+### 创建相关权限
+
+```
+vim nfs-provisioner-rbac.yaml
+
+
+kind: ServiceAccount
+apiVersion: v1
+metadata:
+  name: nfs-client-provisioner
+---
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: nfs-client-provisioner-runner
+rules:
+  - apiGroups: [""]
+    resources: ["persistentvolumes"]
+    verbs: ["get", "list", "watch", "create", "delete"]
+  - apiGroups: [""]
+    resources: ["persistentvolumeclaims"]
+    verbs: ["get", "list", "watch", "update"]
+  - apiGroups: ["storage.k8s.io"]
+    resources: ["storageclasses"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: [""]
+    resources: ["events"]
+    verbs: ["create", "update", "patch"]
+  - apiGroups: [""]
+    resources: ["endpoints"]
+    verbs: ["get", "list", "watch", "create", "update", "patch"]
+---
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: run-nfs-client-provisioner
+subjects:
+  - kind: ServiceAccount
+    name: nfs-client-provisioner
+    namespace: nfs-provisioner
+roleRef:
+  kind: ClusterRole
+  name: nfs-client-provisioner-runner
+  apiGroup: rbac.authorization.k8s.io
+---
+kind: Role
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: leader-locking-nfs-client-provisioner
+rules:
+  - apiGroups: [""]
+    resources: ["endpoints"]
+    verbs: ["get", "list", "watch", "create", "update", "patch"]
+---
+kind: RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: leader-locking-nfs-client-provisioner
+subjects:
+  - kind: ServiceAccount
+    name: nfs-client-provisioner
+    namespace: nfs-provisioner
+roleRef:
+  kind: Role
+  name: leader-locking-nfs-client-provisioner
+  apiGroup: rbac.authorization.k8s.io
+
+
+# 
+oc apply -f nfs-provisioner-rbac.yaml
+```
+
+
+
+### 授予hostmount-anyuid角色
+
+```
+oc adm policy add-scc-to-user hostmount-anyuid system:serviceaccount:nfs-provisioner:nfs-client-provisioner
+```
+
+
+
+### 部署自提供服务
+
+```
+
+vim nfs-provisioner-deployment.yaml
+
+
+
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: nfs-client-provisioner
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: nfs-client-provisioner
+  template:
+    metadata:
+      labels:
+        app: nfs-client-provisioner
+    spec:
+      serviceAccountName: nfs-client-provisioner
+      containers:
+        - name: nfs-client-provisioner
+          image: quay.io/jonkey/nfs-subdir-external-provisioner:v4.0.2
+          volumeMounts:
+            - name: nfs-client-root
+              mountPath: /persistentvolumes
+          env:
+            - name: PROVISIONER_NAME
+              value: nfs-storage
+            - name: NFS_SERVER
+              value: nfs-test1.test1.example.com
+            - name: NFS_PATH
+              value: /data/nfs
+      volumes:
+        - name: nfs-client-root
+          nfs:
+            server: nfs-test1.test1.example.com
+            path: /data/nfs
+
+
+oc apply -f nfs-provisioner-deployment.yaml -n nfs-provisioner
+```
+
+
+
+### 创建nfs的storage class
+
+```
+vim nfs-provisioner-sc.yaml
+
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: nfs-storage-provisioner
+provisioner: nfs-storage
+parameters:
+  archiveOnDelete: "false"
+  
+oc apply -f nfs-provisioner-sc.yaml
+```
+
+
+
+### 设置为默认的存储类
+
+```
+oc annotate storageclass nfs-storage-provisioner storageclass.kubernetes.io/is-default-class="true"
+```
 
 
 
