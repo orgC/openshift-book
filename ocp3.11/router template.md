@@ -2,9 +2,8 @@
 
 # 目标
 
-配置ocp3.11 router 绑核
-
-router 中无法通过配置环境变量的方式来配置绑核，需要通过修改haproxy-template来实现
+1. 自定义配置ocp3.11 router 模板文件
+2. 配置ocp3.11 router 绑核
 
 
 
@@ -96,6 +95,21 @@ sh-4.2$ vi haproxy.config
 2. 登陆router 节点，执行`top`， 从结果来看，符合预期，绑核在前面4个核上 
 
 ![image-20230209152005785](./router template.assets/image-20230209152005785.png)
+
+
+
+# 停止使用自定义模板
+
+
+
+```
+oc project default 
+
+oc set volume dc/router --remove --name=config-volume
+oc set env dc/router TEMPLATE_FILE-
+```
+
+
 
 
 
