@@ -458,6 +458,19 @@ for each in `ls *.tar`; do docker load -i $each; done
 
 # install calico
 
+在所有节点上执行以下命令，打开端口
+
+```
+firewall-cmd --permanent --add-port=179/tcp
+firewall-cmd --permanent --add-port=4789/udp
+firewall-cmd --permanent --add-port=5473/tcp
+firewall-cmd --permanent --add-port=9099/tcp
+firewall-cmd --permanent --add-port=9099/udp
+firewall-cmd --reload
+```
+
+
+
 ```
 
 curl -LO https://projectcalico.docs.tigera.io/manifests/tigera-operator.yaml
@@ -846,4 +859,37 @@ curl -k -H "Content-Type: application/json" -X PUT --data-binary @tmp.json http:
 
 
 ```
+
+
+
+
+
+# upgrade kubernetes
+
+将kubernetes 升级到1.26，不是生产环境的升级模式，只是为了升级版本，重新安装的方式升级 
+
+```
+
+version=1.26.1-0
+yum upgrade -y kubectl-${version} kubelet-${version}  kubeadm-${version} 
+
+yum erase  -y docker-ce
+rpm -qa | grep docker 
+
+yum install -y containerd
+
+crictl config runtime-endpoint unix:///var/run/containerd/containerd.sock
+crictl config image-endpoint unix:///var/run/containerd/containerd.sock
+
+cat  /etc/crictl.yaml
+
+
+kubeadm init --kubernetes-version=v1.26.1 --pod-network-cidr=10.244.0.0/16 --image-repository=registry.aliyuncs.com/google_containers
+```
+
+
+
+
+
+## error log
 
