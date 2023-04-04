@@ -203,7 +203,7 @@ setfacl -m u:1001:-wx $QUAY/storage
 
 ### 开启mirror
 
-如果想要开启mirror，需要再执行以下命令，启动mirror worker 
+如果想要开启mirror，需要再执行以下命令，启动 mirror worker 
 
 ```
 

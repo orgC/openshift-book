@@ -43,6 +43,32 @@ done
 
 
 
+## 安装 httpd server
+
+
+
+```
+yum -y install httpd
+
+cat << EOF > /etc/httpd/conf.d/yum.conf
+Alias /repos "/data/repos/rhel8"
+<Directory "/data/repos/rhel8">
+  Options +Indexes +FollowSymLinks
+  Require all granted
+</Directory>
+<Location /repos>
+  SetHandler None
+</Location>
+EOF
+
+systemctl enable httpd;
+systemctl restart httpd;
+firewall-cmd --permanent --zone=public --add-service=http
+firewall-cmd --reload
+```
+
+
+
 ## 配置repo 文件
 
 ```

@@ -1108,6 +1108,14 @@ M 表示该路由已被重定向报文修改
 
 
 
+配置 rr 模式
+
+https://github.com/easzlab/kubeasz/blob/master/docs/setup/network-plugin/calico-bgp-rr.md
+
+
+
+
+
 # Reference
 
 https://www.cnblogs.com/gxc888/p/15511444.html
