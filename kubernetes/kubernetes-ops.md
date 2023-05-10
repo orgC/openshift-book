@@ -1,3 +1,110 @@
+# 安装后配置
+
+## 配置自动补全
+
+
+
+```
+yum install -y bash-completion 
+
+echo 'source <(kubectl completion bash)' >> ~/.bashrc
+source ~/.bashrc
+```
+
+
+
+## 创建用户并绑定权限
+
+创建一个名为`zhangsan`的用户，并赋予`cluster-admin`权限
+
+
+
+```
+# 为用户zhangsan创建私钥
+openssl genrsa -out zhangsan.key 2048
+
+openssl req -new -key zhangsan.key -out zhangsan.csr -subj "/CN=zhangsan/O=DEMO"
+
+
+# 使用当前的CA为zhagnsan签发证书
+openssl x509 -req -in zhangsan.csr -CA /etc/kubernetes/pki/ca.crt -CAkey /etc/kubernetes/pki/ca.key -CAcreateserial -out zhangsan.crt -days 365
+
+
+```
+
+
+
+### cluster rolebinding 
+
+在这里直接绑定 `cluster-admin`， 在实际环境中，可以按照需求先创建 role，然后再进行rolebinding 
+
+```
+vim zhangsan-cluster-role-binding.yaml
+
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: zhangsan-clusteradmin-binding
+subjects:
+- kind: User
+  name: zhangsan
+  apiGroup: ""
+roleRef:
+  kind: ClusterRole
+  name: cluster-admin
+  apiGroup: ""
+
+
+# 创建 cluster rolebinding 
+kubectl apply -f zhangsan-cluster-role-binding.yaml
+```
+
+
+
+### 为 kubectl 配置用户
+
+
+
+现在我们想要通过kubectl以tom的身份来操作集群，需要将zhangsan的认证信息添加进kubectl的配置，即~/.kube/config中，通过以下命令将用户zhagnsan的验证信息添加进kubectl的配置：
+
+```
+
+kubectl config set-credentials zhangsan --client-certificate=zhangsan.crt --client-key=zhangsan.key
+
+# 此时 查看 ~/.kube/config ，可以看到里边增加了 zhagnsan 用户
+cat ~/.kube/config
+... 
+
+- name: zhangsan
+  user:
+    client-certificate: /root/day2/user/zhangsan.crt
+    client-key: /root/day2/user/zhangsan.key
+    
+# 添加一个context配置
+kubectl config set-context zhangsan --cluster=kubernetes  --user=zhangsan
+
+
+# 查看 context 
+[root@master1 user]# kubectl config get-contexts
+CURRENT   NAME                          CLUSTER      AUTHINFO           NAMESPACE
+          kubernetes-admin@kubernetes   kubernetes   kubernetes-admin
+*         tom                           kubernetes   tom
+          zhangsan                      kubernetes   zhangsan
+          
+          
+# 切换 context
+kubectl config use-context zhangsan
+
+```
+
+
+
+
+
+
+
+
+
 # 部署应用
 
 ## 应用部署

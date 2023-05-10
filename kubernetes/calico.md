@@ -112,6 +112,40 @@ Confd根据存储中的数据更新，动态生成BIRD配置文件。当配置�
 
 
 
+## calicoctl 安装
+
+
+
+### 安装独立的calicoctl 命令
+
+```
+curl -L https://github.com/projectcalico/calico/releases/latest/download/calicoctl-linux-amd64 -o calicoctl
+
+chmod +x ./calicoctl
+
+```
+
+
+
+### calicoctl 以 kubectl 插件的形式运行
+
+
+
+```
+curl -L https://github.com/projectcalico/calico/releases/latest/download/calicoctl-linux-amd64 -o kubectl-calico
+
+chmod +x kubectl-calico
+mv kubectl-calico /usr/local/bin/
+
+# 验证
+kubectl calico -h
+
+```
+
+
+
+
+
 ##  calicoctl 配置
 
 

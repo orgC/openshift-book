@@ -2,6 +2,8 @@
 
 
 
+
+
 # install kubernetes cluster 
 
 
@@ -105,6 +107,14 @@ sysctl --system
 
 dnf config-manager --add-repo=https://download.docker.com/linux/centos/docker-ce.repo
 yum install -y docker-ce 
+
+
+# 设置docker cgroupdriver 的类型为 systemd 
+cat > /etc/docker/daemon.json <<EOF
+{
+  "exec-opts": ["native.cgroupdriver=systemd"]
+}
+EOF
 
 systemctl enable docker
 systemctl start docker
@@ -636,6 +646,32 @@ eyJhbGciOiJSUzI1NiIsImtpZCI6ImdTRy1FZ3RmcWp1WFk0U1g1TFlUTnlmd203NTg2Y1ViX0tsNF9K
 
 # install ingress
 
+## 支持列表
+
+ingress-nginx 与kubernetes 有自己的支持列表
+
+| Ingress-NGINX version | k8s supported version        | Alpine Version | Nginx Version |
+| --------------------- | ---------------------------- | -------------- | ------------- |
+| v1.7.0                | 1.26, 1.25, 1.24             | 3.17.2         | 1.21.6        |
+| v1.6.4                | 1.26, 1.25, 1.24, 1.23       | 3.17.0         | 1.21.6        |
+| v1.5.1                | 1.25, 1.24, 1.23             | 3.16.2         | 1.21.6        |
+| v1.4.0                | 1.25, 1.24, 1.23, 1.22       | 3.16.2         | 1.19.10†      |
+| v1.3.1                | 1.24, 1.23, 1.22, 1.21, 1.20 | 3.16.2         | 1.19.10†      |
+| v1.3.0                | 1.24, 1.23, 1.22, 1.21, 1.20 | 3.16.0         | 1.19.10†      |
+| v1.2.1                | 1.23, 1.22, 1.21, 1.20, 1.19 | 3.14.6         | 1.19.10†      |
+| v1.1.3                | 1.23, 1.22, 1.21, 1.20, 1.19 | 3.14.4         | 1.19.10†      |
+| v1.1.2                | 1.23, 1.22, 1.21, 1.20, 1.19 | 3.14.2         | 1.19.9†       |
+| v1.1.1                | 1.23, 1.22, 1.21, 1.20, 1.19 | 3.14.2         | 1.19.9†       |
+| v1.1.0                | 1.22, 1.21, 1.20, 1.19       | 3.14.2         | 1.19.9†       |
+| v1.0.5                | 1.22, 1.21, 1.20, 1.19       | 3.14.2         | 1.19.9†       |
+| v1.0.4                | 1.22, 1.21, 1.20, 1.19       | 3.14.2         | 1.19.9†       |
+| v1.0.3                | 1.22, 1.21, 1.20, 1.19       | 3.14.2         | 1.19.9†       |
+| v1.0.2                | 1.22, 1.21, 1.20, 1.19       | 3.14.2         | 1.19.9†       |
+| v1.0.1                | 1.22, 1.21, 1.20, 1.19       | 3.14.2         | 1.19.9†       |
+| v1.0.0                | 1.22, 1.21, 1.20, 1.19       | 3.13.5         | 1.20.1        |
+
+
+
 ## 使用nodeport 部署ingress controller 
 
 下载安装所需要的镜像和deploy文件
@@ -705,10 +741,10 @@ kubectl apply -f deploy.yaml
 
 ```
 
-kubectl create deployment demo --image=httpd --port=80
-kubectl expose deployment demo
+kubectl create deployment http-demo --image=httpd --port=80
+kubectl expose deployment http-demo
 
-kubectl create ingress demo --class=nginx --rule www.demo.io/=demo:80
+kubectl create ingress http-demo --class=nginx --rule www.demo.io/=demo:80
 
 # 在本地 /etc/hosts 文件中添加关于 www.demo.io 的解析
 # 通过以下命令获取nodeport 
@@ -743,6 +779,39 @@ ingress-nginx-controller-admission   ClusterIP   10.106.226.56   <none>        4
 # 通过浏览器访问 http://www.mydemo.io:32638
 
 ```
+
+
+
+## (other) 部署1.13 版本
+
+为了方便使用，将1.13 所需要的镜像从 `k8s.gcr.io` 迁移到 `quay.io`
+
+```
+
+curl -LO https://github.com/kubernetes/ingress-nginx/blob/controller-v1.1.3/deploy/static/provider/cloud/deploy.yaml
+
+# 修改service type 为 Nodeport
+sed -i 's/LoadBalancer/NodePort/g' deploy.yaml
+
+
+ sed -i 's/@sha256.*$//g' deploy.yaml
+ 
+ 
+# 修改配置文件， 使用 quay.io 上的镜像，替换现有的镜像，结果大致如下
+[root@master ingress]# cat deploy.yaml | grep image
+        image: quay.io/junkai/ingress-nginx:controller-v1.1.3
+        imagePullPolicy: IfNotPresent
+        image: quay.io/junkai/ingress-nginx:kube-webhook-certgen-v1.1.1
+        imagePullPolicy: IfNotPresent
+        image: quay.io/junkai/ingress-nginx:kube-webhook-certgen-v1.1.1
+        imagePullPolicy: IfNotPresent
+
+
+```
+
+
+
+
 
 
 

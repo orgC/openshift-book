@@ -84,7 +84,31 @@ Collector 收集和监控有关容器运行时和网络活动的信息。然后�
 
 
 
-## 安装instance
+## 安装 central
+
+
+
+新建 stackrox namespace，将ACS 安装到 stackrox下
+
+```
+oc new-project stackrox
+```
+
+
+
+创建 central instance
+
+![image-20230409110428037](./quick-start.assets/image-20230409110428037.png)
+
+
+
+选择 `All namespaces`
+
+![image-20230409110458054](./quick-start.assets/image-20230409110458054.png)
+
+选择 YAML view，将下面yaml 文件贴上
+
+![image-20230409110611381](./quick-start.assets/image-20230409110611381.png)
 
 
 
@@ -170,13 +194,23 @@ oc -n stackrox get secret central-htpasswd -o go-template='{{index .data "htpass
 
 
 
-![image-20230208215800773](./quick-start.assets/image-20230208215800773.png)
+
+
+![image-20230409111600913](./quick-start.assets/image-20230409111600913.png)
+
+
+
+![image-20230409111625790](./quick-start.assets/image-20230409111625790.png)
+
+
+
+![image-20230409111723550](./quick-start.assets/image-20230409111723550.png)
 
 
 
 ```
 
-[root@bastion-test1 acs]# oc apply -f demo-cluster-cluster-init-secrets.yaml -n stackrox
+[root@bastion-test1 acs]# oc apply -f test1-cluster-cluster-init-secrets.yaml -n stackrox
 secret/admission-control-tls created
 secret/collector-tls created
 secret/sensor-tls created
@@ -186,9 +220,12 @@ secret/sensor-tls created
 
 ## 创建SecuredCluster 
 
-
+创建 stackrox-secured-cluster-services.yaml 文件，内容如下
 
 ```
+vim stackrox-secured-cluster-services.yaml
+
+
 apiVersion: platform.stackrox.io/v1alpha1
 kind: SecuredCluster
 metadata:
@@ -199,7 +236,7 @@ spec:
     listenOnCreates: true
     listenOnEvents: true
     listenOnUpdates: true
-  clusterName: demo-cluster
+  clusterName: test1-cluster
   perNode:
     collector:
       collection: EBPF
