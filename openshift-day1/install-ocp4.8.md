@@ -820,16 +820,6 @@ oc adm policy add-cluster-role-to-user cluster-admin admin
 
 
 
-## 配置router 
-
-### 设置router数量
-
-
-
-### 配置router 到infra节点上
-
-
-
 
 
 

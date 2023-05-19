@@ -295,7 +295,7 @@ update-ca-trust
 
 
 
-## 安装
+## 安装 Quay
 
 
 
@@ -305,6 +305,8 @@ yum install -y podman
 ```
 
 
+
+### 安装 
 
 
 
