@@ -184,8 +184,6 @@ oc -n stackrox get secret central-htpasswd -o go-template='{{index .data "htpass
 
 
 
-
-
 ## 创建 cluster init secret bundle
 
 

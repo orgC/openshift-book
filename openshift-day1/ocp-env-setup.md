@@ -222,6 +222,71 @@ EOF
 
 
 
+# 本地 时间服务器
+
+对于 分布式系统而言，时间同步是一个很重要的问题，因此需要在本地配置时间服务器
+
+
+
+## 安装 & 配置 chrony server
+
+```
+yum install chrony -y 
+
+vim /etc/chrony.conf
+... 
+打开这一项配置
+# Allow NTP client access from local network.
+allow 192.168.0.0/16
+```
+
+
+
+```
+
+systemctl start chronyd
+```
+
+
+
+## 为本地节点配置chrony-client 
+
+```
+yum install chrony -y 
+
+vim /etc/chrony.conf
+... 
+
+# pool 2.rhel.pool.ntp.org iburst  # 注释这一行，添加 aliyun ntp server 
+server ntp.aliyun.com iburst
+
+
+# 启动 chrony 服务
+systemctl restart chronyd.service && systemctl enable chronyd.service --now
+
+
+```
+
+
+
+### 查看时间同步状态
+
+```
+[root@quay ~]# chronyc sources -v
+
+  .-- Source mode  '^' = server, '=' = peer, '#' = local clock.
+ / .- Source state '*' = current best, '+' = combined, '-' = not combined,
+| /             'x' = may be in error, '~' = too variable, '?' = unusable.
+||                                                 .- xxxx [ yyyy ] +/- zzzz
+||      Reachability register (octal) -.           |  xxxx = adjusted offset,
+||      Log2(Polling interval) --.      |          |  yyyy = measured offset,
+||                                \     |          |  zzzz = estimated error.
+||                                 |    |           \
+MS Name/IP address         Stratum Poll Reach LastRx Last sample
+===============================================================================
+^* 203.107.6.88                  2   6    17    33   +630us[ -754us] +/-   32ms
+```
+
 
 
 

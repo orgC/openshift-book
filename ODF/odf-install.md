@@ -1,13 +1,30 @@
-# 安装openshift-local-storage
+# 安装 openshift-local-storage
+
+
+
+```
+
+cat <<EOF | oc apply -f -
+apiVersion: v1
+kind: Namespace
+metadata:
+ name: openshift-local-storage
+spec: {}
+EOF
+```
+
+
 
 
 
 安装odf需要有额外的一块硬盘，为计划安装odf的节点打上label
 
 ```
-oc label node infra1-infra.infra-cluster.example.com cluster.ocs.openshift.io/openshift-storage=''
-oc label node infra2-infra.infra-cluster.example.com cluster.ocs.openshift.io/openshift-storage=''
-oc label node infra3-infra.infra-cluster.example.com cluster.ocs.openshift.io/openshift-storage=''
+oc label node odf1.test1.ocp.example.com cluster.ocs.openshift.io/openshift-storage=''
+oc label node odf2.test1.ocp.example.com cluster.ocs.openshift.io/openshift-storage=''
+oc label node odf3.test1.ocp.example.com cluster.ocs.openshift.io/openshift-storage=''
+oc label node odf4.test1.ocp.example.com cluster.ocs.openshift.io/openshift-storage=''
+oc label node odf5.test1.ocp.example.com cluster.ocs.openshift.io/openshift-storage=''
 ```
 
 

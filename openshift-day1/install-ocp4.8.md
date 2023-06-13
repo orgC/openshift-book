@@ -824,7 +824,7 @@ oc adm policy add-cluster-role-to-user cluster-admin admin
 
 
 
-# 安装operatorhub
+# 安装 operatorhub
 
 ## 准备工作
 
@@ -847,7 +847,7 @@ tar zxvf grpcurl_1.8.6_linux_x86_64.tar.gz -C /usr/local/bin
 
 
 
-## 离线operatorhub
+## 离线 operatorhub
 
 
 

@@ -32,6 +32,14 @@ Proxy Pull-Through Caching
 
 
 
+
+
+## 创建常用 Organization
+
+![image-20230529205307735](./quay 使用proxy Pull-Through cache功能.assets/image-20230529205307735.png)
+
+
+
 ## 拉取镜像
 
 通过proxy pull-through cache 拉取镜像，流程如下图所示，第一次拉取的时候，没有缓存，执行之后会自动创建对应的目录
@@ -69,6 +77,150 @@ location = "registry6.ocp.example.com/cache"
 ```
 
 此时即可通过 `podman pull docker.io/library/mysql` 从本地拉取镜像
+
+
+
+##  配置 mcp 使用 proxy 
+
+
+
+```
+
+# 创建 文件 
+cat <<EOF > mirror-registries.conf
+[[registry]]
+  prefix = ""
+  location = "registry.redhat.io"
+  mirror-by-digest-only = false
+
+  [[registry.mirror]]
+    location = "quay.ocp.example.com/registry.redhat.io"
+
+[[registry]]
+  prefix = ""
+  location = "quay.io"
+  mirror-by-digest-only = false
+
+  [[registry.mirror]]
+    location = "quay.ocp.example.com/quay.io"
+
+[[registry]]
+  prefix = ""
+  location = "registry.connect.redhat.com"
+  mirror-by-digest-only = false
+
+  [[registry.mirror]]
+    location = "quay.ocp.example.com/registry.connect.redhat.com"
+    
+[[registry]]
+  prefix = ""
+  location = "docker.io"
+  mirror-by-digest-only = false
+
+  [[registry.mirror]]
+    location = "quay.ocp.example.com/docker.io"
+EOF
+
+
+
+REGISTRIES=`base64 -w0 mirror-registries.conf`
+
+cat <<EOF > 99-mirror-registries.yaml
+apiVersion: machineconfiguration.openshift.io/v1
+kind: MachineConfig
+metadata:
+  labels:
+    machineconfiguration.openshift.io/role: worker
+  name: 99-worker-mirror-registries
+spec:
+  config:
+    ignition:
+      version: 3.1.0
+    storage:
+      files:
+      - contents:
+          source: data:text/plain;charset=utf-8;base64,${REGISTRIES}
+        filesystem: root
+        mode: 420
+        path: /etc/containers/registries.conf.d/99-mirror-registries.conf
+---
+
+apiVersion: machineconfiguration.openshift.io/v1
+kind: MachineConfig
+metadata:
+  labels:
+    machineconfiguration.openshift.io/role: master
+  name: 99-master-mirror-registries
+spec:
+  config:
+    ignition:
+      version: 3.1.0
+    storage:
+      files:
+      - contents:
+          source: data:text/plain;charset=utf-8;base64,${REGISTRIES}
+        filesystem: root
+        mode: 420
+        path: /etc/containers/registries.conf.d/99-mirror-registries.conf
+EOF
+
+
+oc apply -f 99-mirror-registries.yaml
+```
+
+
+
+
+
+```
+[[registry]]
+  prefix = ""
+  location = "registry.redhat.io"
+  mirror-by-digest-only = false
+
+  [[registry.mirror]]
+    location = "registry.ocp4.cn/registry.redhat.io"
+
+[[registry]]
+  prefix = ""
+  location = "quay.io"
+  mirror-by-digest-only = false
+
+  [[registry.mirror]]
+    location = "registry.ocp4.cn/quay.io"
+
+[[registry]]
+  prefix = ""
+  location = "registry.access.redhat.com"
+  mirror-by-digest-only = false
+
+  [[registry.mirror]]
+    location = "registry.ocp4.cn/registry.access.redhat.com"
+
+[[registry]]
+  prefix = ""
+  location = "registry.connect.redhat.com"
+  mirror-by-digest-only = false
+
+  [[registry.mirror]]
+    location = "registry.ocp4.cn/registry.connect.redhat.com"
+
+[[registry]]
+  prefix = ""
+  location = "docker.io"
+  mirror-by-digest-only = false
+
+  [[registry.mirror]]
+    location = "registry.ocp4.cn/docker.io"
+
+[[registry]]
+  prefix = ""
+  location = "gcr.io"
+  mirror-by-digest-only = false
+
+  [[registry.mirror]]
+    location = "registry.ocp4.cn/gcr.io"
+```
 
 
 

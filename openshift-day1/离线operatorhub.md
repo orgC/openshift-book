@@ -491,3 +491,287 @@ status: {}
 
 ```
 
+
+
+
+
+# 另一个离线operator hub 的方案
+
+这个方案的思路大致如下
+
+1. 在 Quay 上边创建一个同名的组织（registry.redhat.io, quay.io等)
+2. 使用 `oc image mirror` 同步operator-index 镜像到本地环境，并推送到本地对应的quay repo 下
+3. 使用 `oc image mirror ` 同步镜像到本地
+4. 在ocp上创建 `machineconfig`, 使其自动获取对应的镜像
+5. 后续如果需要添加其他的operator，重复第二步和第三步即可
+
+
+
+
+
+## 部署 quay
+
+
+
+## 创建MC，从本地镜像仓库获取镜像
+
+
+
+```
+cat <<EOF > mirror-registries.conf
+[[registry]]
+  prefix = ""
+  location = "registry.redhat.io"
+  mirror-by-digest-only = false
+
+  [[registry.mirror]]
+    location = "quay2.ocp.example.com/registry.redhat.io"
+
+[[registry]]
+  prefix = ""
+  location = "quay.io"
+  mirror-by-digest-only = false
+
+  [[registry.mirror]]
+    location = "quay2.ocp.example.com/quay.io"
+
+[[registry]]
+  prefix = ""
+  location = "registry.connect.redhat.com"
+  mirror-by-digest-only = false
+
+  [[registry.mirror]]
+    location = "quay2.ocp.example.com/registry.connect.redhat.com"
+EOF
+
+REGISTRIES=`base64 -w0 mirror-registries.conf`
+
+cat <<EOF > 099-worker-mirror-registries.yaml
+apiVersion: machineconfiguration.openshift.io/v1
+kind: MachineConfig
+metadata:
+  labels:
+    machineconfiguration.openshift.io/role: worker
+  name: 099-worker-mirror-registries
+spec:
+  config:
+    ignition:
+      version: 3.1.0
+    storage:
+      files:
+      - contents:
+          source: data:text/plain;charset=utf-8;base64,${REGISTRIES}
+        filesystem: root
+        mode: 420
+        path: /etc/containers/registries.conf.d/099-mirror-registries.conf
+EOF
+
+
+cat <<EOF > 099-master-mirror-registries.yaml
+apiVersion: machineconfiguration.openshift.io/v1
+kind: MachineConfig
+metadata:
+  labels:
+    machineconfiguration.openshift.io/role: master
+  name: 099-master-mirror-registries
+spec:
+  config:
+    ignition:
+      version: 3.1.0
+    storage:
+      files:
+      - contents:
+          source: data:text/plain;charset=utf-8;base64,${REGISTRIES}
+        filesystem: root
+        mode: 420
+        path: /etc/containers/registries.conf.d/099-mirror-registries.conf
+EOF
+
+oc apply -f 099-worker-mirror-registries.yaml
+oc apply -f 099-master-mirror-registries.yaml
+
+```
+
+
+
+
+
+## 同步镜像
+
+使用以下脚本
+
+### 准备工作
+
+1. pull secret 文件
+2. 下载，安装 grpcurl
+3. 
+
+### 本地启动operator-index 镜像
+
+```
+podman run  --authfile ~/install/pull-secret.txt -p50051:50051 -it registry.redhat.io/redhat/redhat-operator-index:v4.12
+```
+
+
+
+### list  operator
+
+
+
+```
+#!/usr/bin/env bash
+
+grpcurl -plaintext localhost:50051  api.Registry.ListPackages | jq -r .name | sort
+```
+
+
+
+### list images
+
+执行以下脚本，list 选择的 package 都有哪些 image
+
+```
+
+package=$1
+
+#channel="stable"
+
+default_channel=$(grpcurl -d '{"name":"'${package}'"}' -plaintext localhost:50051 api.Registry.GetPackage | jq -r .defaultChannelName)
+
+cvs=$(grpcurl -d '{"name":"'${package}'"}' -plaintext localhost:50051 api.Registry.GetPackage | jq -r '.channels[]|select(.name == "'${default_channel}'").csvName')
+
+data='{"pkgName": "'${package}'", "channelName": "'${default_channel}'", "csvName": "'${cvs}'"}'
+
+grpcurl -d "$data" -plaintext localhost:50051 api.Registry.GetBundle | jq -r .bundlePath
+
+grpcurl -d "$data" -plaintext localhost:50051 api.Registry.GetBundle | jq -r .csvJson | jq -r .spec.relatedImages[].image
+```
+
+
+
+### 同步 image 到本地
+
+
+
+```
+cat 
+
+images_file=$1
+echo "images_file: "$images_file
+
+from_redhat=${from_redhat:-"true"}
+
+auth_file='/root/install/mysecret.json'
+
+for line in `cat $images_file`;do
+  redhat_domain=$(echo $line | awk -F '/' '{print $1}')
+  if [[ $from_redhat == "true" ]]; then
+    src_image_name=$line
+  else
+    src_image_name=$(echo $line | sed "s/${redhat_domain}/${src_registry}/g")
+  fi
+  dest_image_name=$(echo $line | awk -F '@' '{print $1} '| sed "s/${redhat_domain}//g")
+  sha=$(echo $line | awk -F '@' '{print $2} ')
+  tag=$(echo $line | awk -F ':' '{print $2}')
+  if [[ "$sha" == "sha256"* ]]; then
+    tag=${tag:0:8}
+    dest_image_name=$dest_image_name:$tag
+  fi
+
+  echo "========================================="
+  echo "oc image mirror $src_image_name $dest_image_name -a $auth_file  --keep-manifest-list=true --filter-by-os='.*' --insecure=true"
+  echo "========================================="
+  oc image mirror $src_image_name file:/$dest_image_name -a $auth_file  --keep-manifest-list=true --filter-by-os='.*'
+  echo ""
+done
+```
+
+
+
+
+
+### 同步 operator index 镜像到本地
+
+
+
+```
+
+oc image mirror registry.redhat.io/redhat/redhat-marketplace-index:v4.12 file://redhat/redhat-marketplace-index -a /root/install/mysecret.json --keep-manifest-list=true --filter-by-os='.*'
+```
+
+
+
+
+
+
+
+### 推送镜像到本地quay
+
+```
+
+oc image mirror -a /root/install/mysecret.json file://redhat/redhat-operator-index:v4.12  quay2.ocp.example.com/registry.redhat.io/redhat/redhat-operator-index:v4.12 --keep-manifest-list=true --filter-by-os='.*'
+```
+
+
+
+### 推送本地operator 镜像到镜像仓库
+
+> 说明： 后面使用的时候有两个地方需要修改
+>
+> 1. Auth_file 路径
+> 2. dest_registry 路径
+
+```
+cat upload_images.sh
+=============
+
+
+#!/usr/bin/env bash
+
+images_file=$1
+echo "images_file: "$images_file
+
+dest_registry="quay2.ocp.example.com/registry.redhat.io"
+from_redhat=${from_redhat:-"true"}
+
+auth_file='/root/install/all-secret.json'
+
+for line in `cat $images_file`;do
+  redhat_domain=$(echo $line | awk -F '/' '{print $1}')
+  if [[ $from_redhat == "true" ]]; then
+    src_image_name=$(echo $line | sed "s/${redhat_domain}//g")
+  else
+    src_image_name=$(echo $line | sed "s/${redhat_domain}/${src_registry}/g")
+  fi
+  dest_image_name=$(echo $line | awk -F '@' '{print $1} '| sed "s#${redhat_domain}#${dest_registry}#g")
+  sha=$(echo $line | awk -F '@' '{print $2} ')
+  tag=$(echo $line | awk -F ':' '{print $2}')
+  if [[ "$sha" == "sha256"* ]]; then
+    tag=${tag:0:8}
+    dest_image_name=$dest_image_name:$tag
+  fi
+
+  echo "========================================="
+  echo "oc image mirror file:/$src_image_name $dest_image_name -a $auth_file  --keep-manifest-list=true --filter-by-os='.*' "
+  echo "========================================="
+  ## oc image mirror file:/$src_image_name $dest_image_name -a $auth_file  --keep-manifest-list=true --filter-by-os='.*'
+  echo ""
+done
+
+=============
+
+bash upload_images.sh <images_file>
+
+
+```
+
+
+
+
+
+# 基于选择的operator离线operator hub
+
+有时候，我们只需要交付特定的operator，此时可以只准备特定的镜像出来，并且创建不同的sourcecatalog
+
+
+
