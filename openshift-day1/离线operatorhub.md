@@ -639,6 +639,7 @@ grpcurl -plaintext localhost:50051  api.Registry.ListPackages | jq -r .name | so
 执行以下脚本，list 选择的 package 都有哪些 image
 
 ```
+cat list-image.sh
 
 package=$1
 
