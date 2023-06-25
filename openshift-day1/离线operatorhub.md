@@ -525,7 +525,7 @@ cat <<EOF > mirror-registries.conf
   mirror-by-digest-only = false
 
   [[registry.mirror]]
-    location = "quay2.ocp.example.com/registry.redhat.io"
+    location = "quay.ocp.example.com/registry.redhat.io"
 
 [[registry]]
   prefix = ""
@@ -533,7 +533,7 @@ cat <<EOF > mirror-registries.conf
   mirror-by-digest-only = false
 
   [[registry.mirror]]
-    location = "quay2.ocp.example.com/quay.io"
+    location = "quay.ocp.example.com/quay.io"
 
 [[registry]]
   prefix = ""
@@ -541,7 +541,15 @@ cat <<EOF > mirror-registries.conf
   mirror-by-digest-only = false
 
   [[registry.mirror]]
-    location = "quay2.ocp.example.com/registry.connect.redhat.com"
+    location = "quay.ocp.example.com/registry.connect.redhat.com"
+
+[[registry]]
+  prefix = ""
+  location = "registry.k8s.io"
+  mirror-by-digest-only = false
+
+  [[registry.mirror]]
+    location = "quay.ocp.example.com/registry.k8s.io"
 EOF
 
 REGISTRIES=`base64 -w0 mirror-registries.conf`
@@ -651,17 +659,19 @@ grpcurl -d "$data" -plaintext localhost:50051 api.Registry.GetBundle | jq -r .cs
 
 ### 同步 image 到本地
 
-
+> 说明： images_file 是包含 images列表的文件
+>
+> 
 
 ```
-cat 
+cat mirror-image.sh 
 
 images_file=$1
 echo "images_file: "$images_file
 
 from_redhat=${from_redhat:-"true"}
 
-auth_file='/root/install/mysecret.json'
+auth_file='/root/install/all-secret.json'
 
 for line in `cat $images_file`;do
   redhat_domain=$(echo $line | awk -F '/' '{print $1}')
@@ -684,6 +694,7 @@ for line in `cat $images_file`;do
   oc image mirror $src_image_name file:/$dest_image_name -a $auth_file  --keep-manifest-list=true --filter-by-os='.*'
   echo ""
 done
+
 ```
 
 
@@ -720,6 +731,8 @@ oc image mirror -a /root/install/mysecret.json file://redhat/redhat-operator-ind
 >
 > 1. Auth_file 路径
 > 2. dest_registry 路径
+>
+> 注意： 下面最关键的33行，被注释掉了，可以先通过上边打印出来的结果来看一下 命令是否正确。确认命令正确后再真正执行
 
 ```
 cat upload_images.sh

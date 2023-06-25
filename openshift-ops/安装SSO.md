@@ -116,3 +116,81 @@ copy证书
 
 
 
+
+
+
+
+## 配置 SSO logout-for-sso7.4
+
+在配置sso 时，需要配置logout才能真正退出session
+
+
+
+```
+oc edit console.config.openshift.io cluster
+
+# 在下面增加以下几行
+
+apiVersion: config.openshift.io/v1
+kind: Console
+metadata:
+  name: cluster
+spec:
+  authentication:
+    logoutRedirect: "https://sso-sso-app-demo.apps.test7.ocp.example.com/auth/realms/OpenShift/protocol/openid-connect/logout?redirect_uri=https%3A%2F%2Fconsole-openshift-console.apps.test7.ocp.example.com" 
+```
+
+
+
+其中 `logoutRedirect` 格式说明
+
+1. end-session-endpoint 地址按照以下说明从SSO中获取
+2. ocp-console-url： 就是ocp console 的地址，注意，这里需要用url coder，`https://` 要写成 `https%3A%2F%2F`
+
+
+
+```
+
+spec:
+  authentication:
+    logoutRedirect: <end-session-endpoint>?redirect_uri=<ocp-console-url>
+
+```
+
+end-session-endpoint 地址按照以下方式获取
+
+![image-20230615123537420](./安装SSO.assets/image-20230615123537420.png)
+
+在这里获取logout 地址
+
+![image-20230615123607127](./安装SSO.assets/image-20230615123607127.png)
+
+
+
+
+
+## 配置 sso logout -for-sso7.6
+
+在sso7.6 里，[logout 方式发生变化](https://access.redhat.com/documentation/en-us/red_hat_single_sign-on/7.6/html-single/upgrading_guide/index#openid_connect_logout)
+
+
+
+`redirect_uri` 以及后面的跳转地址都不需要了
+
+```
+oc edit console.config.openshift.io cluster
+... 
+spec:
+  authentication:
+    logoutRedirect: https://sso-sso-app-demo.apps.test7.ocp.example.com/auth/realms/OpenShift/protocol/openid-connect/logout
+```
+
+
+
+
+
+
+
+# Reference
+
+https://access.redhat.com/solutions/6973001
