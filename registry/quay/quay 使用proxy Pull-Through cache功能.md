@@ -224,6 +224,18 @@ oc apply -f 99-mirror-registries.yaml
 
 
 
+## quay 使用http_proxy
+
+有些时候，quay 需要科学上网，这是可以在其pod 中配置 http_proxy 环境变量
+
+```
+export QUAY=/data
+
+sudo podman run -d --rm -p 80:8080 -p 443:8443 -e http_proxy=http://192.168.3.90:7890 -e https_proxy=http://192.168.3.90:7890 -e all_proxy=socks://192.168.3.90:7891 -e no_proxy=localhost,127.0.0.0/8,192.168.0.0/16 -e NO_PROXY=.ocp.example.com --name=quay -v $QUAY/config:/conf/stack:Z -v $QUAY/storage:/datastorage:Z registry.redhat.io/quay/quay-rhel8:v3.8.2
+```
+
+
+
 
 
 # Reference

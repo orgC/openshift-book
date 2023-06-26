@@ -226,3 +226,29 @@ registry2.ocp.example.com:8443/baseimage/demo5' with tag pattern '*': ('skopeo i
 3. 只能同步当前repo，不能同步子repo，例如下面这种，我们配置的是同步demo5，那么 demo/busybox 是无法同步的
 
 ![image-20220810002301315](./poc安装quay.assets/image-20220810002301315-0062186.png)
+
+
+
+
+
+### 为 quay 设置 http_proxy 代理
+
+
+
+```
+export QUAY=/data
+
+sudo podman run -d --rm -p 80:8080 \
+  -p 443:8443 \
+  -e http_proxy=http://192.168.3.90:7890 \
+  -e https_proxy=http://192.168.3.90:7890 \
+  -e all_proxy=socks://192.168.3.90:7891 \
+  -e no_proxy=localhost,127.0.0.0/8,192.168.0.0/16 \
+  -e NO_PROXY=.ocp.example.com \
+  --name=quay \
+  -v $QUAY/config:/conf/stack:Z \
+  -v $QUAY/storage:/datastorage:Z \
+  registry.redhat.io/quay/quay-rhel8:v3.8.2
+
+```
+
