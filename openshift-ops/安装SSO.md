@@ -90,6 +90,8 @@ copy证书
 
 回到之前user 配置页面，把证书贴上去
 
+说明：这里的ca 是 ingress operator 自己生成的CA，如果在这里写了ca，后面在做ingress 证书替换的时候，可能会遇到一个坑，就是 openid 的证书出现x509 的错误，所以这里不填ca也是一个方案
+
 ![image-20230611183046704](./安装SSO.assets/image-20230611183046704.png)
 
 
