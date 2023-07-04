@@ -56,10 +56,29 @@ EOF
 
 
 
+```
+[root@bastion-test4 ~]# oc get localvolumediscoveries -n openshift-local-storage
+
+NAME                    AGE
+auto-discover-devices   2m7s
+[root@bastion-test4 ~]#
+[root@bastion-test4 ~]#  oc get localvolumediscoveryresults -n openshift-local-storage
+NAME                                             AGE
+discovery-result-worker1.test4.ocp.example.com   62s
+discovery-result-worker2.test4.ocp.example.com   91s
+discovery-result-worker3.test4.ocp.example.com   54s
+```
+
+
+
+
+
+
+
 ## 创建 LocalVolumeSet 对象
 
 ```
-cat << EOF > localvolumeset.yaml
+cat << EOF | oc apply -f -
 apiVersion: local.storage.openshift.io/v1alpha1
 kind: LocalVolumeSet
 metadata:
@@ -84,6 +103,7 @@ spec:
    - NonRotational
 EOF
 
+
 ### 
 oc create -f localvolumeset.yaml
 ```
@@ -91,6 +111,29 @@ oc create -f localvolumeset.yaml
 稍等一下，会创建新的PV 
 
 ![image-20221101172741104](./odf-install.assets/image-20221101172741104.png)
+
+
+
+## 检查 diskmaker-manager pod
+
+```
+[root@bastion-test4 mirror-registry]# oc get pods -n openshift-local-storage | grep "diskmaker-manager"
+diskmaker-manager-6twmc                   2/2     Running   0          73s
+diskmaker-manager-h8z28                   2/2     Running   0          73s
+diskmaker-manager-ql6lf                   2/2     Running   0          73s
+```
+
+
+
+## 检查对应的PV已经创建
+
+```
+[root@bastion-test4 mirror-registry]# oc get pv -n openshift-local-storage
+NAME                CAPACITY   ACCESS MODES   RECLAIM POLICY   STATUS      CLAIM   STORAGECLASS   REASON   AGE
+local-pv-2a0fd522   200Gi      RWO            Delete           Available           localblock              62s
+local-pv-2b38cb7e   200Gi      RWO            Delete           Available           localblock              62s
+local-pv-47aaed09   200Gi      RWO            Delete           Available           localblock              63s
+```
 
 
 
@@ -112,7 +155,7 @@ ODF operator 部署成功
 
 
 
-
+##  创建 storagecluster 实例
 
 
 
@@ -166,6 +209,32 @@ oc create -f storagecluster.yaml
 ```
 
 
+
+## 通过UI创建ODF
+
+
+
+![image-20230704003653295](./odf-install.assets/image-20230704003653295.png)
+
+
+
+选择刚才通过 local-storage 创建的storage class 
+
+![image-20230704003715070](./odf-install.assets/image-20230704003715070.png)
+
+
+
+![image-20230704003832801](./odf-install.assets/image-20230704003832801.png)
+
+
+
+
+
+![image-20230704003847920](./odf-install.assets/image-20230704003847920.png)
+
+
+
+![image-20230704003902858](./odf-install.assets/image-20230704003902858.png)
 
 
 

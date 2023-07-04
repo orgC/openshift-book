@@ -114,7 +114,82 @@ copy证书
 
 
 
+## SSO 配置
+
+创建realm
+
+![image-20230629221934730](./安装SSO.assets/image-20230629221934730.png)
+
+创建client
+
+![image-20230629222148985](./安装SSO.assets/image-20230629222148985.png)
+
+![image-20230629222226206](./安装SSO.assets/image-20230629222226206.png)
+
+1. 修改 Access Type 为 confidential
+2. 添加 Valid Redirect URIs:  可以按照实际业务添加，或者偷懒，直接写*
+
+![image-20230629222314525](./安装SSO.assets/image-20230629222314525.png)
+
+
+
+此时 SSO 这边的配置就做完了
+
+
+
 ## 配置ocp 与sso 对接
+
+
+
+
+
+![image-20230629225653620](./安装SSO.assets/image-20230629225653620.png)
+
+
+
+![image-20230629230045272](./安装SSO.assets/image-20230629230045272.png)
+
+
+
+![image-20230629230017511](./安装SSO.assets/image-20230629230017511.png)
+
+
+
+![image-20230629225818195](./安装SSO.assets/image-20230629225818195.png)
+
+
+
+
+
+## SSO 添加用户
+
+在sso上手工添加用户
+
+![image-20230629230620324](./安装SSO.assets/image-20230629230620324.png)
+
+![image-20230629230658938](./安装SSO.assets/image-20230629230658938.png)
+
+为新增加的用户设置密码
+
+![image-20230629230933230](./安装SSO.assets/image-20230629230933230.png)
+
+使用刚才创建的用户登录
+
+![image-20230629231032683](./安装SSO.assets/image-20230629231032683.png)
+
+可以看到对应的User
+
+![image-20230629231144190](./安装SSO.assets/image-20230629231144190.png)
+
+执行以下命令为用户设置超级管理员权限
+
+```
+ oc adm policy add-cluster-role-to-user cluster-admin thomas
+```
+
+
+
+
 
 
 

@@ -55,10 +55,6 @@ sudo mv /tmp/subctl-v0.14.5/subctl-v0.14.5-linux-amd64 /usr/local/sbin/subctl
 
 
 
-
-
-
-
 # Demo
 
 ##  跨集群直接通过pod ip 访问

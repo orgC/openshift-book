@@ -5,8 +5,7 @@
 1. 在OCP4 上安装cilium
 2. 配置 Hubble 
 3. 配置underlay 网络
-
-
+4. 对接BGP网络
 
 
 
@@ -377,66 +376,137 @@ oc delete scc cilium-test
 
 
 
-##  安装  underlay 模式
-
-### 配置 ciliumconfig 对象
 
 
+# 配置BGP
+
+前面配置了overlay模式，后续我们考虑对接BGP 路由器，通过BGP与外部网络进行对接
+
+
+
+## OCP node 信息
+
+
+
+| NO   | Name    | ip            |
+| ---- | ------- | ------------- |
+| 1    | master1 | 192.168.3.121 |
+| 2    | master2 | 192.168.3.122 |
+| 3    | master3 | 192.168.3.123 |
+| 4    | worker1 | 192.168.3.124 |
+| 5    | worker2 | 192.168.3.125 |
+| 6    | worker3 | 192.168.3.126 |
+
+
+
+
+
+## BGP 模拟器安装，配置
+
+这里使用 **Quagga** 来做BGP模拟器，目前貌似该软件只能部署在centos7 上，我们先准备一个centos 7 节点，然后执行以下操作
 
 ```
-apiVersion: cilium.io/v1alpha1
-kind: CiliumConfig
-metadata: 
-  name: cilium
-  namespace: cilium
-spec:
-  debug:
-    enabled: false
-  cni:
-    binPath: /var/lib/cni/bin
-    confPath: /var/run/multus/cni/net.d
-  endpointRoutes:
-    enabled: true
-  tunnel: disabled
-  ipv4-native-routing-cidr: 192.168.5.0/24
-  hubble:
-    enabled: true
-    metrics:
-      enabled:
-      - dns:query;ignoreAAAA
-      - drop
-      - tcp
-      - flow
-      - icmp
-      - http
-      serviceMonitor:
-        enabled: true
-    tls:
-      enabled: true
-    relay:
-      enabled: true
-    ui:
-      enabled: true
-      ingress:
-        enabled: true
-        hosts:
-          - hubble.apps.test4.ocp.example.com
-  ipam:
-    mode: cluster-pool
-    operator:
-      clusterPoolIPv4MaskSize: "23"
-      clusterPoolIPv4PodCIDR: 10.128.0.0/14
-  kubeProxyReplacement: probe
-  nativeRoutingCIDR: 10.128.0.0/14
-  prometheus:
-    enabled: true
-    serviceMonitor:
-      enabled: true
-  operator:
-    prometheus:
-      enabled: true
-      serviceMonitor:
-        enabled: true
+hostnamectl set-hostname bgp-simulator.ocp.example.com
+
+yum install quagga -y
+cp /usr/share/doc/quagga-0.99.22.4/zebra.conf.sample /etc/quagga/zebra.conf
+cd /etc/quagga/
+cp zebra.conf zebra.conf.bak
+cp /usr/share/doc/quagga-0.99.22.4/zebra.conf.sample /etc/quagga/zebra.conf
+cp /usr/share/doc/quagga-0.99.22.4/bgpd.conf.sample /etc/quagga/bgpd.conf
+
+```
+
+
+
+参考以下内容修改 zebra.conf文件
+
+```
+vim zebra.conf
+
+! -*- zebra -*-
+!
+! zebra sample configuration file
+!
+! $Id: zebra.conf.sample,v 1.1 2002/12/13 20:15:30 paul Exp $
+!
+hostname bgp-simulator.ocp.example.com
+password zebra
+enable password zebra
+!
+! Interface's description.
+!
+!interface lo
+! description test of desc.
+!
+!interface sit0
+! multicast
+
+!
+! Static default route sample.
+!
+!ip route 0.0.0.0/0 203.181.89.241
+!
+
+!log file zebra.log
+
+启动服务
+systemctl enable zebra --now
+systemctl status zebra
+```
+
+
+
+参照以下内容修改/etc/quagga/bgpd.conf 文件
+
+说明：下面将所有的ocp node 加入
+
+```
+
+[root@bgp-simulator quagga]# cat /etc/quagga/bgpd.conf
+! -*- bgp -*-
+!
+! BGPd sample configuratin file
+!
+! $Id: bgpd.conf.sample,v 1.1 2002/12/13 20:15:29 paul Exp $
+!
+hostname bgpd
+password zebra
+!enable password please-set-at-here
+!
+!bgp mulitple-instance
+!
+router bgp 64512
+bgp router-id 10.19.0.1  		# 不知道啥意思，照抄就行
+network 10.19.0.0/16        # 不知道啥意思，照抄就行
+
+neighbor 192.168.3.121 remote-as 64512 				# node ip， AS id 为 64512 
+neighbor 192.168.3.122 remote-as 64512
+neighbor 192.168.3.123 remote-as 64512
+neighbor 192.168.3.124 remote-as 64512
+neighbor 192.168.3.125 remote-as 64512
+neighbor 192.168.3.126 remote-as 64512
+
+! bgp router-id 10.0.0.1
+! network 10.0.0.0/8
+! neighbor 10.0.0.2 remote-as 7675
+! neighbor 10.0.0.2 route-map set-nexthop out
+! neighbor 10.0.0.2 ebgp-multihop
+! neighbor 10.0.0.2 next-hop-self
+!
+access-list all permit any
+!
+!route-map set-nexthop permit 10
+! match ip address all
+! set ip next-hop 10.0.0.1
+!
+log file /var/log/quagga/bgpd.log
+!
+log stdout
+
+启动服务
+systemctl enable bgpd --now
+systemctl status bgpd
 ```
 
 

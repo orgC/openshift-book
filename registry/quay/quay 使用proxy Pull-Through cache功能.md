@@ -236,6 +236,20 @@ sudo podman run -d --rm -p 80:8080 -p 443:8443 -e http_proxy=http://192.168.3.90
 
 
 
+## quay 取消 http_proxy
+
+```
+先kill quay container 
+podman kill <quay-container-id>
+
+export QUAY=/data
+
+sudo podman run -d --rm -p 80:8080 -p 443:8443 --name=quay -v $QUAY/config:/conf/stack:Z -v $QUAY/storage:/datastorage:Z registry.redhat.io/quay/quay-rhel8:v3.8.2
+
+```
+
+
+
 
 
 # Reference

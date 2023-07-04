@@ -103,8 +103,6 @@ oc patch ingresscontroller.operator default \
 
 
 
-
-
 # 遇到问题
 
 
