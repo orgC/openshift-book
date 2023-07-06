@@ -91,7 +91,7 @@ Collector 收集和监控有关容器运行时和网络活动的信息。然后�
 新建 stackrox namespace，将ACS 安装到 stackrox下
 
 ```
-oc new-project stackrox
+oc new-project stackrox 
 ```
 
 
