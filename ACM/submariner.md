@@ -1,8 +1,50 @@
 
 
+# 目标
+
+1. 验证submariner 模式
+
+
+
+# 安装测试集群
+
+## 安装测试集群ocp1
+
+![image-20230903180321829](./submariner.assets/image-20230903180321829.png)
+
+
+
+
+
+![image-20230903180246196](./submariner.assets/image-20230903180246196.png)
+
+
+
+
+
+
+
+## 安装测试集群ocp2
+
+
+
+
+
+![image-20230903180414888](./submariner.assets/image-20230903180414888.png)
+
+
+
+![image-20230903180459221](./submariner.assets/image-20230903180459221.png)
+
+
+
+
+
 
 
 # 安装
+
+
 
 
 
