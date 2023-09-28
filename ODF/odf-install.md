@@ -77,6 +77,14 @@ discovery-result-worker3.test4.ocp.example.com   54s
 
 ## 创建 LocalVolumeSet 对象
 
+
+
+![image-20230915094725041](./odf-install.assets/image-20230915094725041.png)
+
+
+
+
+
 ```
 cat << EOF | oc apply -f -
 apiVersion: local.storage.openshift.io/v1alpha1

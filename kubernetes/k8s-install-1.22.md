@@ -857,9 +857,73 @@ spec:
 
 
 
+#  安装后配置
+
+
+
+## 安装 krew
+
+1. 安装git 
+2. Linux 环境下，执行以下命令 安装 
+
+```
+(
+  set -x; cd "$(mktemp -d)" &&
+  OS="$(uname | tr '[:upper:]' '[:lower:]')" &&
+  ARCH="$(uname -m | sed -e 's/x86_64/amd64/' -e 's/\(arm\)\(64\)\?.*/\1\2/' -e 's/aarch64$/arm64/')" &&
+  KREW="krew-${OS}_${ARCH}" &&
+  curl -fsSLO "https://github.com/kubernetes-sigs/krew/releases/latest/download/${KREW}.tar.gz" &&
+  tar zxvf "${KREW}.tar.gz" &&
+  ./"${KREW}" install krew
+)
+```
+
+3. export 环境变量
+
+```
+```
+
+
+
+## 安装常用插件
+
+```
+```
+
+
+
+##  安装bash complete
+
+```
+yum install -y bash-completion
+```
+
+
+
+## 在 .bashrc 中添加以下内容
+
+
+
+```
+
+source <(kubectl completion bash)
+
+export PATH="${KREW_ROOT:-$HOME/.krew}/bin:$PATH"
+export PATH=$PATH:/usr/local/go/bin
+
+alias k=kubectl
+complete -F __start_kubectl k
+```
+
+
+
 
 
 # 部署测试应用
+
+
+
+## demo
 
 
 
@@ -867,6 +931,18 @@ spec:
 kubectl create ns demo 
 
 kubectl -n demo  create deployment demo1 --image quay.io/junkai/demo:1.0 
+
+```
+
+
+
+## tools
+
+```
+kubectl create ns tools 
+
+kubectl -n tools  create deployment tools --image quay.io/junkai/tools:latest
+
 
 ```
 

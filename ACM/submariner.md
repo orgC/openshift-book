@@ -140,7 +140,9 @@ Hostname: hello-server-8556688746-5t2b5
 
 
 
-## 跨集群访问service
+
+
+## 跨集群访问
 
 
 
@@ -149,8 +151,62 @@ Hostname: hello-server-8556688746-5t2b5
 
 [root@bastion-test5 ~]# subctl export service --namespace hello-demo hello-server
  ✓ Service exported successfully
+```
+
+
+
+### ocp1 部署服务
 
 ```
+oc new-project cross-site
+oc create deployment hello-world-frontend --image quay.io/jonkey/skupper/hello-world-frontend:20230225 
+oc expose deployment hello-world-frontend --port 8080 
+oc expose svc hello-world-frontend
+oc set env deployment hello-world-frontend BACKEND_SERVICE_HOST_="hello-world-backend.cross-site.svc.clusterset.local"
+oc set env deployment hello-world-frontend BACKEND_SERVICE_PORT_="8080"
+
+oc get route 
+
+oc create deployment hello-world-backend --image quay.io/jonkey/skupper/hello-world-backend:20230225 
+oc expose deployment hello-world-backend --port 8080 
+
+cat <<EOF | oc apply -f -
+apiVersion: multicluster.x-k8s.io/v1alpha1
+kind: ServiceExport
+metadata:
+  name: hello-world-backend
+  namespace: cross-site
+EOF
+
+```
+
+
+
+### ocp2 部署服务
+
+
+
+```
+# ocp32 cluster 
+oc new-project cross-site
+oc create deployment hello-world-backend --image quay.io/jonkey/skupper/hello-world-backend:20230225 
+oc expose deployment hello-world-backend --port 8080 
+
+
+cat <<EOF | oc apply -f -
+apiVersion: multicluster.x-k8s.io/v1alpha1
+kind: ServiceExport
+metadata:
+  name: hello-world-backend
+  namespace: cross-site
+EOF
+
+
+```
+
+
+
+### 访问测试
 
 
 

@@ -6,6 +6,40 @@
 
 
 
+# 说明
+
+
+
+## 概念
+
+
+
+### Metro-DR
+
+Metro-DR 可确保在数据中心出现问题时保持业务的连续性，并不会造成数据丢失。在公有云中，它们类似于防止可用性区域失败。
+
+###  Regional-DR
+
+区域 DR 可以在一个地理区域出现问题时确保业务的连续性（在可以接受一些可预测数量的数据丢失的情况下）。在公有云中，它们类似于防止区域故障。
+
+### 使用扩展集群进行灾难恢复
+
+扩展集群解决方案可确保在单一 OpenShift 集群中通过基于 OpenShift Data Foundation 的同步复制，在具有低延迟和一个仲裁节点的两个数据中心间扩展，且无数据丢失灾难恢复保护。
+
+
+
+### RPO（ecovery Point Objective）
+
+是一种衡量持久性数据备份或快照的频率。实际上，RPO 表示在中断后将丢失或需要重新输入的数据量。
+
+### RTO（Recovery Time Objective）
+
+是企业可以容忍的停机时间。RTO 回答了这个问题，"在收到业务中断通知后，我们的系统需要多久才能恢复？"
+
+
+
+
+
 # 试验环境
 
 OCP4.11 
@@ -95,6 +129,18 @@ spec:
 
 
 ## 安装ODF
+
+
+
+![image-20230913085222779](./ODF-DR.assets/image-20230913085222779.png)
+
+
+
+![image-20230913085724691](./ODF-DR.assets/image-20230913085724691.png)
+
+
+
+
 
 ![image-20230627230623808](./ODF-DR.assets/image-20230627230623808.png)
 
@@ -212,6 +258,10 @@ ocp2
 
 
 
+
+
+
+
 ## 安装 ODF Multicluster Orchestrator Operator
 
 
@@ -245,8 +295,6 @@ ramen-hub-operator-799f695d5c-tf8z5         2/2     Running   0          2m34s
 
 
 在ocp1集群执行 以下命令，获取 ingress 证书
-
-
 
 ```
 oc get cm default-ingress-cert -n openshift-config-managed -o jsonpath="{['data']['ca-bundle\.crt']}" > primary.crt
@@ -293,7 +341,7 @@ data:
     -----END CERTIFICATE-----
 kind: ConfigMap
 metadata:
-  name: user-ca-bundle
+  name: custom-ca-bundle
   namespace: openshift-config
 ```
 
@@ -385,7 +433,7 @@ data:
     -----END CERTIFICATE-----
 kind: ConfigMap
 metadata:
-  name: user-ca-bundle
+  name: custom-ca-bundle
   namespace: openshift-config
 ```
 
@@ -394,7 +442,7 @@ metadata:
 在 hub，ocp1  和 ocp2 上执行以下命令，为三个集群设置proxy
 
 ```
-oc patch proxy cluster --type=merge  --patch='{"spec":{"trustedCA":{"name":"user-ca-bundle"}}}'
+oc patch proxy cluster --type=merge  --patch='{"spec":{"trustedCA":{"name":"custom-ca-bundle"}}}'
 ```
 
 
@@ -403,7 +451,7 @@ oc patch proxy cluster --type=merge  --patch='{"spec":{"trustedCA":{"name":"user
 
 ## 打开 Multicluster Web Console
 
-
+在 hub 节点上执行以下操作：
 
 打开 **Administration** → **Cluster Settings** → **Configuration** → **FeatureGate**  ， 打开yaml，按照以下内容修改
 
@@ -431,7 +479,122 @@ spec:
 
 
 
+![image-20230915104535381](./ODF-DR.assets/image-20230915104535381.png)
 
+
+
+当创建DRpolicy后， 会执行以下动作
+
+
+
+- Create a bootstrap token and exchanges this token between the managed clusters.
+- Enable mirroring for the default `CephBlockPool` on each managed clusters.
+- Create a **VolumeReplicationClass** on the **Primary managed cluster** and the **Secondary managed cluster** for the replication interval in the DRPolicy.
+- An object bucket created (using MCG) on each managed cluster for storing **PVC** and **PV** metadata.
+- A **Secret** created in the `openshift-operators` project on the **Hub cluster** for each new object bucket that has the base64 encoded access keys.
+- The `ramen-hub-operator-config` **ConfigMap** on the **Hub cluster** is modified with `s3StoreProfiles` entries.
+- The `OpenShift DR Cluster` operator will be deployed on each managed cluster in the `openshift-dr-system` project.
+- The object buckets **Secrets** on the **Hub cluster** in the project `openshift-operators` will be copied to the managed clusters in the `openshift-dr-system` project.
+- The `s3StoreProfiles` entries will be copied to the managed clusters and used to modify the `ramen-dr-cluster-operator-config` **ConfigMap** in the `openshift-dr-system` project.
+
+
+
+
+
+![image-20230915104802287](./ODF-DR.assets/image-20230915104802287.png)
+
+在HUB节点上执行命令，查看 DR 创建结果
+
+```
+[root@bastion-test3 odf-dr]# oc get drpolicy ocp4-ocp5-1m -o jsonpath='{.status.conditions[].reason}{"\n"}'
+Succeeded
+
+[root@bastion-test3 odf-dr]# oc get drclusters
+NAME    AGE
+test4   5m6s
+test5   5m6s
+
+```
+
+
+
+在 **Primary managed cluster**  和 **Secondary managed cluster** 上执行 
+
+```
+[root@bastion-test4 odf-dr]# oc get csv,pod -n openshift-dr-system
+NAME                                                                            DISPLAY                         VERSION        REPLACES                             PHASE
+clusterserviceversion.operators.coreos.com/odr-cluster-operator.v4.12.7-rhodf   Openshift DR Cluster Operator   4.12.7-rhodf   odr-cluster-operator.v4.12.6-rhodf   Succeeded
+clusterserviceversion.operators.coreos.com/volsync-product.v0.7.4               VolSync                         0.7.4          volsync-product.v0.7.3               Succeeded
+
+NAME                                            READY   STATUS    RESTARTS   AGE
+pod/ramen-dr-cluster-operator-d9684948d-qhsgn   2/2     Running   0          9m19s
+```
+
+
+
+在  **Primary managed cluster**  和 **Secondary managed cluster** 上执行以下命令，查看ODF mirroring daemon，
+
+
+
+```
+[root@bastion-test4 odf-dr]# oc get cephblockpool ocs-storagecluster-cephblockpool -n openshift-storage -o jsonpath='{.status.mirroringStatus.summary}{"\n"}'
+{"daemon_health":"OK","health":"OK","image_health":"OK","states":{}}
+```
+
+
+
+
+
+# 创建 DR 应用
+
+
+
+
+
+![image-20230915110855982](./ODF-DR.assets/image-20230915110855982.png)
+
+
+
+创建应用：
+
+url： https://github.com/RamenDR/ocm-ramen-samples
+
+
+
+![image-20230915111028726](./ODF-DR.assets/image-20230915111028726.png)
+
+
+
+选择将应用部署在 test4 集群上
+
+
+
+![image-20230915111427915](./ODF-DR.assets/image-20230915111427915.png)
+
+结果如下所示：
+
+
+
+![image-20230915111848986](./ODF-DR.assets/image-20230915111848986.png)
+
+
+
+检查结果
+
+
+
+```
+[root@bastion-test4 odf-dr]# oc get pods,pvc -n busybox-sample
+NAME                           READY   STATUS    RESTARTS   AGE
+pod/busybox-645dbd9c68-rlkbv   1/1     Running   0          2m56s
+
+NAME                                STATUS   VOLUME                                     CAPACITY   ACCESS MODES   STORAGECLASS                  AGE
+persistentvolumeclaim/busybox-pvc   Bound    pvc-766c2190-ac50-429b-bb1b-e3fad517c50d   1Gi        RWO            ocs-storagecluster-ceph-rbd   2m56s
+```
+
+
+
+##    使用  DRpolicy
 
 
 
