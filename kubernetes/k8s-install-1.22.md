@@ -857,6 +857,35 @@ spec:
 
 
 
+
+
+# install metrics
+
+
+
+访问  https://github.com/kubernetes-sigs/metrics-server/releases
+
+
+
+![image-20230928141416975](./k8s-install-1.22.assets/image-20230928141416975.png)
+
+
+
+待修改文件内容如下
+
+![image-20230928141438693](./k8s-install-1.22.assets/image-20230928141438693.png)
+
+两个修改点：
+
+1. 添加kubelet 参数 `- --kubelet-insecure-tls`
+2. 修改镜像地址： registry.cn-hangzhou.aliyuncs.com/google_containers/metrics-server:v0.6.2
+
+![image-20230928144405581](./k8s-install-1.22.assets/image-20230928144405581.png)
+
+
+
+
+
 #  安装后配置
 
 
