@@ -910,6 +910,8 @@ spec:
 3. export 环境变量
 
 ```
+export PATH="${KREW_ROOT:-$HOME/.krew}/bin:$PATH"
+
 ```
 
 
@@ -917,6 +919,8 @@ spec:
 ## 安装常用插件
 
 ```
+
+
 ```
 
 

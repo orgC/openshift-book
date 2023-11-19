@@ -10,6 +10,49 @@
 
 
 
+## 查看当前生效的探针
+
+
+
+![image-20231026105333188](./kubeskoop-metrics.assets/image-20231026105333188.png)
+
+```
+[root@master1-c1 ~]# kubectl -n kubeskoop exec -it kubeskoop-exporter-fqhxz sh
+kubectl exec [POD] [COMMAND] is DEPRECATED and will be removed in a future version. Use kubectl exec [POD] -- [COMMAND] instead.
+Defaulted container "inspector" out of: inspector, inspector-prepare (init)
+/ #
+/ # curl 127.0.0.1:9102/status | jq .
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100   362  100   362    0     0   132k      0 --:--:-- --:--:-- --:--:--  176k
+{
+  "Procfd": true,
+  "flow": false,
+  "insp_conntrack": true,
+  "insp_ipvs": true,
+  "insp_kernellatency": false,
+  "insp_netiftxlat": false,
+  "insp_netsoftirq": true,
+  "insp_packetloss": false,
+  "insp_qdisc": true,
+  "insp_socketlatency": false,
+  "insp_virtcmdlatency": false,
+  "procio": true,
+  "procnetdev": true,
+  "procnetstat": true,
+  "procsnmp": true,
+  "procsock": true,
+  "procsoftnet": true,
+  "proctcpsummary": true
+}
+/ #
+
+```
+
+
+
+
+
 ## 调整探针，event 方案
 
 修改 configmap kubeskoop-config 内容，可以按照需求开启，关闭 探针 和 事件
@@ -327,6 +370,8 @@ FRAG: inuse 0 memory 0
 
 适用场景：连接建立失败，丢包，conntrack串流等问题
 
+说明： 通过开启 flow 探针获取以下指标
+
 #### 指标
 
 | 指标                                 | 说明                                                         |
@@ -353,7 +398,7 @@ FRAG: inuse 0 memory 0
 
 说明： procfs中对网络设备状态的统计
 
-开销：低
+开销：低©
 
 使用场景： 日常监控，网络抖动，底层网络丢包等情况
 
