@@ -15,6 +15,24 @@
 
 
 
+## 离线yum配置
+
+
+
+```
+subscription-manager repos --enable=rhel-8-for-$(uname -m)-baseos-debug-rpms --enable=rhel-8-for-$(uname -m)-appstream-debug-rpms
+
+
+```
+
+
+
+
+
+
+
+## VM 配置
+
 
 
 注意： 需要在VM上关闭安全引导，否则会报权限错误
@@ -50,7 +68,8 @@ client # nc -n4  192.168.3.225 9001
 在server 执行以下命令，查看server端的 进程
 
 ```
-[root@localhost ~]# netstat -npa | egrep "Recv|ESTAB.*/nc"
+[root@localhost ~]# 
+
 Proto Recv-Q Send-Q Local Address           Foreign Address         State       PID/Program name
 tcp        0      0 192.168.3.239:34188     192.168.3.225:9001      ESTABLISHED 622407/nc
 
@@ -61,6 +80,23 @@ kill -9 622407
 ```
 
 
+
+
+
+## demo2-container
+
+
+
+```
+
+ stap -g -v -S 100,10 -o /tmp/tcp_reset_stp.out tcp-reset.stp
+ 
+ 
+ 10.131.2.31
+ 
+server # nc -nl4 10.131.2.31 9001
+client # nc -n4  10.131.2.31 9001
+```
 
 
 
