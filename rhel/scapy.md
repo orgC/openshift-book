@@ -6,8 +6,6 @@ scapy 是一个可以构造tcp包的工具，可以尝试使用该工具模拟�
 
 
 
-
-
 # 安装
 
 
@@ -17,10 +15,6 @@ yum install -y python3
 
 pip3 install scapy
 ```
-
-
-
-
 
 
 

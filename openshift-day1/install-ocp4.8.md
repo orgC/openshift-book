@@ -730,8 +730,6 @@ source ~/.bashrc
 
 
 
-
-
 ## 检查master 节点磁盘性能
 
 这一步非常重要，OCP4 对master 节点的磁盘性能要求很高，如果IO不好的话，很容易导致ETCD故障，然后进一步导致集群不稳定，OCP4 的要求小于10ms 
@@ -851,7 +849,7 @@ tar zxvf grpcurl_1.8.6_linux_x86_64.tar.gz -C /usr/local/bin
 
 
 
-### 离线所需operator 到本地
+### 离线所需 operator 到本地
 
 ```
 podman login registry.redhat.io
