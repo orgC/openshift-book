@@ -199,7 +199,7 @@ firewall-cmd --reload
 
 ## 配置 thanos receive 
 
-
+> 说明： 以下insecure 如果配置为false，那么访问后端S3需要使用https + 证书
 
 ```
 cat << EOF > bucket.yml
@@ -213,6 +213,8 @@ config:
 EOF
 
 ```
+
+
 
 
 
@@ -241,14 +243,30 @@ docker run -d \
 
 
 
+## 修改prometheus 配置
+
+
+
+### 添加remote-write
+
+
+
+修改 prometheus 配置，增加 remote-write 
+
 ```
 spec:
   remoteWrite:
-    - url: "http://thanos-receive.monitoring.svc.cluster.local:19291/api/v1/receive"
-      writeRelabelConfigs:
-        - sourceLabels: [__name__]
-          regex: 'my_metric.*'
-          action: keep
+  - url: http://192.168.3.213:19291/api/v1/receive
+```
 
+
+
+### 遇到问题
+
+
+
+```
+level=warn ts=2024-04-28T01:24:07.048111992Z caller=receive.go:716 component=receive component=uploader msg="recurring upload failed" err="upload: check exists: stat s3 object: Get \"https://minio-single.ocp.example.com:9000/thanos-receive/?location=\": http: server gave HTTP response to HTTPS client"
+level=warn ts=2024-04-28T01:24:37.046929525Z caller=receive.go:662 component=receive component=uploader msg="upload failed" elapsed=3.954478ms err="upload: check exists: stat s3 object: Get \"https://minio-single.ocp.example.com:9000/thanos-receive/?location=\": http: server gave HTTP response to HTTPS client"
 ```
 
