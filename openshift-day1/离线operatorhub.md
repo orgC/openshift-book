@@ -71,6 +71,13 @@ yum install -y podman
 # 列出来所有的4.10 operattor index 
 oc mirror list operators --catalogs --version=4.10
 
+一般有以下4个
+registry.redhat.io/redhat/redhat-operator-index:v4.10
+registry.redhat.io/redhat/certified-operator-index:v4.10
+registry.redhat.io/redhat/community-operator-index:v4.10
+registry.redhat.io/redhat/redhat-marketplace-index:v4.10
+
+
 
 # 下载redhat-opeator-index:4.10 
 podman pull --authfile /root/install/pull-secret.txt registry.redhat.io/redhat/redhat-operator-index:v4.10
@@ -713,10 +720,6 @@ oc image mirror registry.redhat.io/redhat/redhat-marketplace-index:v4.12 file://
 
 
 
-
-
-
-
 ### 推送镜像到本地quay
 
 ```
@@ -777,6 +780,60 @@ done
 bash upload_images.sh <images_file>
 
 
+```
+
+
+
+# 使用本地operator
+
+## 禁用所有operatorhub
+
+```
+oc patch OperatorHub cluster --type json \
+    -p '[{"op": "add", "path": "/spec/disableAllDefaultSources", "value": true}]'
+```
+
+
+
+## 创建新的 catalogsource
+
+创建 catalogSource-redhat-operator-index.yaml 
+
+```
+# cat catalogSource-redhat-operator-index.yaml 
+
+apiVersion: operators.coreos.com/v1alpha1
+kind: CatalogSource
+metadata:
+  name: local-redhat-operator-index
+  namespace: openshift-marketplace
+spec:
+  sourceType: grpc
+  image: harbor.ocp4.example.com:8443/operatorhub/redhat/redhat-operator:v4.15
+  displayName: Local Red Hat Operators
+  publisher: Red Hat
+```
+
+
+
+
+
+## 创建新的imageContentSourcePolicy
+
+> 注意： 创建新的 imageContentSourcePolicy后，
+
+```
+# cat imageContentSourcePolicy.yaml 
+
+apiVersion: operator.openshift.io/v1alpha1
+kind: ImageContentSourcePolicy
+metadata:
+  name: redhat-operator-index-415
+spec:
+  repositoryDigestMirrors:
+  - mirrors:
+    - harbor.ocp4.example.com:8443/operatorhub
+    source: registry.redhat.io
 ```
 
 
