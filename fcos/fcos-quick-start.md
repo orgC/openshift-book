@@ -231,6 +231,21 @@ govc vm.power -on "${VM_NAME}"
 
 
 
+## 设置时区 
+
+
+
+```
+variant: fcos
+version: 1.5.0
+storage:
+  links:
+    - path: /etc/localtime
+      target: ../usr/share/zoneinfo/Asia/Shanghai
+```
+
+
+
 
 
 ## kernel tuning
@@ -475,6 +490,8 @@ passwd:
 
 # 升级OS demo
 
+
+
 ## 升级前准备
 
 下载一个历史版本的CoreOS
@@ -521,9 +538,154 @@ sudo rpm-ostree rebase "fedora/${ARCH}/coreos/${STREAM}"
 
 
 
+## 检查升级日志
 
 
 
+```
+# 如果有新版本的话，fedora coreos 会自动下载新版本，执行以下命令可以查看下载进度 
+journalctl -u rpm-ostreed
+```
+
+
+
+![image-20241008204151487](./fcos-quick-start.assets/image-20241008204151487.png)
+
+
+
+## 结果
+
+新版本下载后，默认情况下会自动升级，重启。
+
+终端会显示以下信息
+
+```
+root@localhost:~#
+Broadcast message from root@localhost (Tue 2024-10-08 12:46:58 UTC):
+
+The system will reboot now!
+
+
+Broadcast message from root@localhost (Tue 2024-10-08 12:46:58 UTC):
+
+The system will reboot now!
+
+```
+
+
+
+使用以下命令可以查看两个版本之间的差别
+
+
+
+```
+rpm-ostree db diff
+```
+
+![image-20241008222709479](./fcos-quick-start.assets/image-20241008222709479.png)
+
+
+
+
+
+
+
+## 跨版本升级 
+
+从fedora coreos 39 升级到fedora 40 
+
+### 目标
+
+1. 验证从 fedora 38 升级到 fedora 40 
+2. fedora 38： https://builds.coreos.fedoraproject.org/prod/streams/stable/builds/38.20230722.3.0/aarch64/fedora-coreos-38.20230722.3.0-live.aarch64.iso
+
+
+
+###  fedora CoreOS 38 升级 
+
+1. 在本地安装 CoreOS 38.20230722.3.0
+2. 首先会自动升级到  38.20231027.3.2
+3. 然后会尝试升级到 39.20240104.3.0 
+4. 
+
+![image-20241009102542391](./fcos-quick-start.assets/image-20241009102542391.png)
+
+
+
+
+
+### 从 fedora 39 升级到 fedora40 
+
+1. 在本地 vmware 上安装
+
+![image-20241008214611249](./fcos-quick-start.assets/image-20241008214611249.png)
+
+
+
+刚安装完毕后，查看 rpm-ostree，只有一个版本
+
+![image-20241008214759711](./fcos-quick-start.assets/image-20241008214759711.png)
+
+
+
+```
+# 执行以下命令，可以看到需要升级的目标版本
+ journalctl -u zincati.service
+```
+
+
+
+![image-20241008220311599](./fcos-quick-start.assets/image-20241008220311599.png)
+
+
+
+升级到40 版本
+
+![image-20241008222012239](./fcos-quick-start.assets/image-20241008222012239.png)
+
+
+
+节点重启后，再次查看 zincati 服务日志，发现又有新的升级目标，系统会自动升级 
+
+
+
+![image-20241008222252688](./fcos-quick-start.assets/image-20241008222252688.png)
+
+
+
+
+
+## 内网环境升级 CoreOS
+
+
+
+
+
+
+
+# rpm-ostree
+
+
+
+
+
+
+
+
+
+## countme
+
+
+
+Fedora CoreOS 的 "Count Me" 机制是一种收集匿名使用数据的功能，它用于向 Fedora 项目报告系统在多长时间内一直处于使用状态。这种机制的主要目的是帮助 Fedora 开发者更好地了解用户的使用模式，特别是系统的长期使用情况和生命周期。这是一种**匿名的、非侵入性的统计数据收集**，不会泄露任何个人信息
+
+
+
+可以通过以下命令禁用 count me 机制 
+
+```
+systemctl mask --now rpm-ostree-countme.timer
+```
 
 
 
