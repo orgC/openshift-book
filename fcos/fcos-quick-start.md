@@ -3,13 +3,10 @@
 # 目标
 
 1. 在linux 环境上完成测试demo
-2. 
 
 
 
-
-
-# env setup
+# env setup 
 
 
 
@@ -226,6 +223,43 @@ govc vm.power -on "${VM_NAME}"
 
 * 配置静态IP
 * 配置bond 
+
+
+
+## 设置 网络 
+
+说明：默认的第一块网卡是ens160，所以这里配置ens160 的地址 
+
+
+
+```
+
+variant: fcos
+version: 1.5.0
+passwd:
+  users:
+    - name: core
+      ssh_authorized_keys:
+        - ${ID_RSA}
+    - name: chen
+      password_hash: $y$j9T$DB7hCBX3WbltpO96zBxRm/$t3sNJVwvHo2jtQ4gOq/OZzmyjG.U/L0vAMWxt4R5vZD
+storage:
+  files:
+    - path: /etc/NetworkManager/system-connections/ens160.nmconnection
+      mode: 0600
+      contents:
+        inline: |
+          [connection]
+          id=ens160
+          type=ethernet
+          interface-name=ens160
+          [ipv4]
+          address1=192.168.63.200/24,192.168.63.1
+          dns=192.168.63.2;
+          dns-search=
+          may-fail=false
+          method=manual
+```
 
 
 
@@ -612,8 +646,6 @@ rpm-ostree db diff
 
 
 
-
-
 ### 从 fedora 39 升级到 fedora40 
 
 1. 在本地 vmware 上安装
@@ -650,6 +682,16 @@ rpm-ostree db diff
 
 
 ![image-20241008222252688](./fcos-quick-start.assets/image-20241008222252688.png)
+
+
+
+
+
+## 关闭自动升级服务
+
+1. 安装 fcos 38， 关闭自动升级服务
+
+
 
 
 
@@ -719,4 +761,4 @@ systemctl mask --now rpm-ostree-countme.timer
 
 
 
-![image-20240908134709810](./fcos-quick-start.assets/image-20240908134709810.png)
+![image-20240908134709810](./fcos-quick-start.assets/image-20240908134709810.png)¬
